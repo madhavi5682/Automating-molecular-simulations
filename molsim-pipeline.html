@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MolSim Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060810;
+    --surface: #0d1117;
+    --card: #111827;
+    --border: #1a2535;
+    --accent: #00ff9d;
+    --accent2: #0066ff;
+    --accent3: #ff6b35;
+    --text: #e6edf3;
+    --muted: #556070;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Unbounded', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline effect */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,157,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,157,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:0 20px 80px; }
+
+  /* ── Header ── */
+  header {
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .hf-badge {
+    font-size: 11px;
+    padding: 6px 14px;
+    border: 1px solid rgba(0,255,157,0.3);
+    border-radius: 4px;
+    color: var(--accent);
+    background: rgba(0,255,157,0.05);
+  }
+  #hf-url-display { font-size: 10px; color: var(--muted); margin-top: 3px; text-align:right; }
+
+  /* ── Stepper ── */
+  .stepper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    gap: 0;
+  }
+  .step { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .step-num {
+    width:32px; height:32px; border-radius:50%;
+    border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:var(--muted);
+    transition: all 0.3s;
+  }
+  .step.active .step-num { border-color:var(--accent); color:var(--accent); background:rgba(0,255,157,0.08); box-shadow:0 0 16px rgba(0,255,157,0.2); }
+  .step.done .step-num   { border-color:var(--accent2); color:var(--accent2); background:rgba(0,102,255,0.08); }
+  .step-label { font-size:11px; color:var(--muted); white-space:nowrap; letter-spacing:0.5px; }
+  .step.active .step-label { color:var(--text); }
+  .step.done .step-label   { color:var(--accent2); }
+  .step-line { flex:1; height:1px; background:var(--border); min-width:20px; max-width:50px; }
+
+  /* ── Panels ── */
+  .panel { display:none; animation: slideIn 0.35s ease; }
+  .panel.active { display:block; }
+  @keyframes slideIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:none; } }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+  }
+  .card-title {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  /* ── Form ── */
+  .field { margin-bottom: 16px; }
+  label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,255,157,0.1);
+  }
+  select option { background: var(--surface); }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .field-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media(max-width:600px) { .field-row,.field-row-3 { grid-template-columns:1fr; } }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover { border-color:var(--accent); background:rgba(0,255,157,0.03); }
+  .upload-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; }
+  .upload-icon { font-size:26px; margin-bottom:8px; }
+  .upload-label { font-size:12px; color:var(--muted); }
+  .upload-label strong { color:var(--accent); }
+  .uploaded-ok {
+    display:flex; align-items:center; gap:8px;
+    padding:8px 12px;
+    background:rgba(0,102,255,0.1);
+    border:1px solid rgba(0,102,255,0.3);
+    border-radius:6px; margin-top:8px;
+    font-size:11px; color:#60a5fa;
+  }
+
+  /* ── Molecule table ── */
+  .mol-table { border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:14px; }
+  .mol-head {
+    display:grid; grid-template-columns:2fr 1fr 1fr auto;
+    padding:8px 14px; background:var(--surface);
+    font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);
+    gap:10px;
+  }
+  .mol-row {
+    display:grid; grid-template-columns:2fr 1fr 1fr auto;
+    padding:10px 14px; border-top:1px solid var(--border);
+    align-items:center; gap:10px;
+    transition: background 0.15s;
+  }
+  .mol-row:hover { background:rgba(255,255,255,0.02); }
+  .mol-name { font-size:13px; color:var(--text); }
+  .mol-count { font-size:13px; color:var(--accent); font-weight:700; }
+  .tag { display:inline-block; padding:2px 7px; border-radius:3px; font-size:10px; margin-right:3px; }
+  .tag-pdb { background:rgba(0,255,157,0.12); color:var(--accent); }
+  .tag-lt  { background:rgba(0,102,255,0.12);  color:#60a5fa; }
+  .btn-rm  { background:none; border:1px solid rgba(255,107,53,0.3); color:var(--accent3); border-radius:4px; padding:4px 8px; cursor:pointer; font-size:11px; font-family:var(--mono); transition:all 0.15s; }
+  .btn-rm:hover { background:rgba(255,107,53,0.1); }
+
+  .add-form {
+    background:var(--surface); border:1px dashed var(--border);
+    border-radius:8px; padding:16px; margin-top:12px;
+  }
+  .add-form-title { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+
+  /* ── Config grid ── */
+  .cfg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media(max-width:700px) { .cfg-grid { grid-template-columns:1fr 1fr; } }
+
+  /* ── Buttons ── */
+  .btn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:10px 22px; border-radius:6px;
+    font-family:var(--mono); font-size:13px; font-weight:700;
+    cursor:pointer; transition:all 0.2s; border:none;
+  }
+  .btn-primary {
+    background: var(--accent); color:#000;
+    box-shadow: 0 0 20px rgba(0,255,157,0.2);
+  }
+  .btn-primary:hover { box-shadow:0 0 30px rgba(0,255,157,0.5); transform:translateY(-1px); }
+  .btn-secondary { background:var(--surface); border:1px solid var(--border); color:var(--text); }
+  .btn-secondary:hover { border-color:var(--accent); }
+  .btn-success { background:var(--accent2); color:#fff; box-shadow:0 0 20px rgba(0,102,255,0.2); }
+  .btn-success:hover { box-shadow:0 0 30px rgba(0,102,255,0.4); transform:translateY(-1px); }
+  .btn-lg { padding:14px 32px; font-size:14px; }
+  .btn:disabled { opacity:0.35; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+  .btn-row { display:flex; justify-content:space-between; align-items:center; margin-top:24px; gap:10px; flex-wrap:wrap; }
+
+  /* ── Terminal ── */
+  .terminal { background:#04070d; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .term-bar {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:9px 14px; display:flex; align-items:center; gap:7px;
+    font-size:11px; color:var(--muted);
+  }
+  .dot { width:9px; height:9px; border-radius:50%; }
+  .dot.r{background:#ff5f57;} .dot.y{background:#ffbd2e;} .dot.g{background:#28ca41;}
+  .term-body {
+    padding:16px; font-size:11px; line-height:1.9;
+    max-height:300px; overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+  }
+  .l-info    { color:#556070; }
+  .l-success { color:var(--accent); }
+  .l-cmd     { color:#60a5fa; }
+  .l-warn    { color:#f59e0b; }
+  .l-error   { color:var(--accent3); }
+  .l-step    { color:#c084fc; font-weight:700; }
+
+  /* ── Progress stages ── */
+  .stages { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .stage {
+    display:flex; align-items:center; gap:14px;
+    padding:14px 18px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; transition:all 0.3s;
+  }
+  .stage.running { border-color:var(--accent); background:rgba(0,255,157,0.04); }
+  .stage.done    { border-color:rgba(0,102,255,0.4); background:rgba(0,102,255,0.04); }
+  .stage.error   { border-color:rgba(255,107,53,0.4); background:rgba(255,107,53,0.04); }
+  .stage-ico { font-size:20px; width:32px; text-align:center; }
+  .stage-info { flex:1; }
+  .stage-name { font-size:13px; font-weight:700; margin-bottom:3px; }
+  .stage-desc { font-size:10px; color:var(--muted); letter-spacing:0.5px; }
+  .stage-stat {
+    font-size:11px; font-weight:700; padding:3px 10px;
+    border-radius:20px; letter-spacing:0.5px;
+  }
+  .stage.pending .stage-stat { color:var(--muted); background:rgba(100,116,139,0.1); }
+  .stage.running .stage-stat { color:var(--accent); background:rgba(0,255,157,0.1); animation:blink 1.4s infinite; }
+  .stage.done    .stage-stat { color:#60a5fa; background:rgba(0,102,255,0.1); }
+  .stage.error   .stage-stat { color:var(--accent3); background:rgba(255,107,53,0.1); }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  .prog-wrap { background:var(--surface); border-radius:100px; height:5px; margin-bottom:6px; overflow:hidden; }
+  .prog-bar  { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:100px; transition:width 0.5s ease; box-shadow:0 0 8px rgba(0,255,157,0.4); }
+  .prog-pct  { font-size:11px; color:var(--muted); text-align:right; }
+
+  /* ── Results ── */
+  .results-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+  @media(max-width:580px) { .results-grid { grid-template-columns:1fr; } }
+  .res-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:18px; transition:all 0.2s;
+  }
+  .res-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .res-icon { font-size:24px; margin-bottom:8px; }
+  .res-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .res-desc { font-size:11px; color:var(--muted); margin-bottom:14px; }
+  .btn-dl {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:6px 14px;
+    background:rgba(0,255,157,0.08); border:1px solid rgba(0,255,157,0.25);
+    color:var(--accent); border-radius:5px; font-size:11px; font-weight:700;
+    cursor:pointer; transition:all 0.15s; font-family:var(--mono);
+  }
+  .btn-dl:hover { background:rgba(0,255,157,0.15); }
+
+  .stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  @media(max-width:580px) { .stat-row { grid-template-columns:1fr 1fr; } }
+  .stat-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
+  .stat-val { font-family:var(--display); font-size:22px; font-weight:700; color:var(--accent); }
+  .stat-lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+
+  /* ── Pipeline diagram ── */
+  .pipe-diagram {
+    display:flex; align-items:center; justify-content:center;
+    flex-wrap:wrap; gap:0; margin:24px 0; row-gap:12px;
+  }
+  .pipe-node {
+    text-align:center; padding:12px 16px;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:8px; min-width:90px; flex-shrink:0;
+  }
+  .pipe-node-ico { font-size:20px; margin-bottom:5px; }
+  .pipe-node-name { font-size:11px; font-weight:700; }
+  .pipe-node-sub { font-size:9px; color:var(--muted); margin-top:2px; }
+  .pipe-arrow { color:var(--accent); font-size:16px; padding:0 6px; flex-shrink:0; opacity:0.6; }
+
+  /* ── Alert ── */
+  .alert { display:flex; gap:10px; padding:12px 16px; border-radius:6px; margin-bottom:16px; font-size:12px; line-height:1.6; }
+  .alert-info { background:rgba(0,255,157,0.06); border:1px solid rgba(0,255,157,0.2); }
+  .alert-warn { background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); color:#f59e0b; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header>
+  <div>
+    <div class="logo">Mol<span>Sim</span> Pipeline</div>
+    <div class="logo-sub">Moltemplate · Packmol · LAMMPS</div>
+  </div>
+  <div style="text-align:right">
+    <div class="hf-badge" id="conn-badge">⬤ Connecting...</div>
+    <div id="hf-url-display"></div>
+  </div>
+</header>
+
+<!-- PIPELINE DIAGRAM -->
+<div class="pipe-diagram">
+  <div class="pipe-node"><div class="pipe-node-ico">🧬</div><div class="pipe-node-name">LigParGen</div><div class="pipe-node-sub">.pdb + .lt</div></div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node"><div class="pipe-node-ico">📋</div><div class="pipe-node-name">Configure</div><div class="pipe-node-sub">molecules</div></div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node"><div class="pipe-node-ico">🔧</div><div class="pipe-node-name">Moltemplate</div><div class="pipe-node-sub">force field</div></div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node"><div class="pipe-node-ico">📦</div><div class="pipe-node-name">Packmol</div><div class="pipe-node-sub">packing</div></div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node"><div class="pipe-node-ico">⚡</div><div class="pipe-node-name">LAMMPS</div><div class="pipe-node-sub">MD run</div></div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node"><div class="pipe-node-ico">📊</div><div class="pipe-node-name">Results</div><div class="pipe-node-sub">download</div></div>
+</div>
+
+<!-- STEPPER -->
+<div class="stepper">
+  <div class="step active" id="step-1"><div class="step-num">1</div><div class="step-label">Upload</div></div>
+  <div class="step-line"></div>
+  <div class="step" id="step-2"><div class="step-num">2</div><div class="step-label">Molecules</div></div>
+  <div class="step-line"></div>
+  <div class="step" id="step-3"><div class="step-num">3</div><div class="step-label">Parameters</div></div>
+  <div class="step-line"></div>
+  <div class="step" id="step-4"><div class="step-num">4</div><div class="step-label">Running</div></div>
+  <div class="step-line"></div>
+  <div class="step" id="step-5"><div class="step-num">5</div><div class="step-label">Results</div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL 1: Upload -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel active" id="panel-1">
+  <div class="card">
+    <div class="card-title">Upload LigParGen Files</div>
+    <div class="alert alert-info">
+      💡 Download <strong>.pdb</strong> and <strong>.lt</strong> files from <strong>ligpargen.org</strong> for each molecule in your system, then upload them here.
+    </div>
+    <div id="upload-entries">
+      <div class="upload-entry" style="padding:18px;background:var(--surface);border-radius:8px;border:1px solid var(--border);margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">Molecule #1</div>
+        <div class="field-row">
+          <div class="field">
+            <label>PDB File</label>
+            <div class="upload-zone" id="zone-pdb-1">
+              <input type="file" accept=".pdb" onchange="handleUpload(this,'pdb',1)">
+              <div class="upload-icon">🧪</div>
+              <div class="upload-label"><strong>Click</strong> to upload .pdb</div>
+            </div>
+            <div id="pdb-status-1"></div>
+          </div>
+          <div class="field">
+            <label>LT File</label>
+            <div class="upload-zone" id="zone-lt-1">
+              <input type="file" accept=".lt" onchange="handleUpload(this,'lt',1)">
+              <div class="upload-icon">⚗️</div>
+              <div class="upload-label"><strong>Click</strong> to upload .lt</div>
+            </div>
+            <div id="lt-status-1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-secondary" onclick="addUploadRow()" style="font-size:12px;">+ Add Another Molecule</button>
+  </div>
+  <div class="btn-row">
+    <div></div>
+    <button class="btn btn-primary" onclick="goTo(2)">Next: Define Molecules →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL 2: Molecules -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-2">
+  <div class="card">
+    <div class="card-title">Molecule Composition</div>
+    <div class="mol-table">
+      <div class="mol-head"><div>Name</div><div>Count</div><div>Files</div><div></div></div>
+      <div id="mol-rows"><div class="mol-row" style="grid-template-columns:1fr;color:var(--muted);font-size:12px;">No molecules added yet.</div></div>
+    </div>
+    <div class="add-form">
+      <div class="add-form-title">Add Molecule</div>
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field" style="margin:0"><label>Name</label><input type="text" id="new-name" placeholder="e.g. WATER"></div>
+        <div class="field" style="margin:0"><label>Count</label><input type="number" id="new-count" value="100" min="1"></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Link to Uploaded Files</label>
+        <select id="new-file"><option value="">-- select uploaded molecule --</option></select>
+      </div>
+      <button class="btn btn-secondary" onclick="addMolecule()" style="font-size:12px;">+ Add</button>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(1)">← Back</button>
+    <button class="btn btn-primary" onclick="goTo(3)">Next: Parameters →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL 3: Parameters -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-3">
+  <div class="card">
+    <div class="card-title">Box & Packing (Packmol)</div>
+    <div class="field-row-3">
+      <div class="field"><label>Box X (Å)</label><input type="number" id="box-x" value="40"></div>
+      <div class="field"><label>Box Y (Å)</label><input type="number" id="box-y" value="40"></div>
+      <div class="field"><label>Box Z (Å)</label><input type="number" id="box-z" value="40"></div>
+      <div class="field"><label>Tolerance (Å)</label><input type="number" id="pack-tol" value="2.0" step="0.1"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">LAMMPS MD Settings</div>
+    <div class="cfg-grid">
+      <div class="field"><label>Ensemble</label><select id="lmp-ens"><option>NVT</option><option>NPT</option><option>NVE</option></select></div>
+      <div class="field"><label>Temperature (K)</label><input type="number" id="lmp-T" value="300"></div>
+      <div class="field"><label>Pressure (atm)</label><input type="number" id="lmp-P" value="1.0" step="0.1"></div>
+      <div class="field"><label>Timestep (fs)</label><input type="number" id="lmp-dt" value="1.0" step="0.5"></div>
+      <div class="field"><label>Run Steps (×1000)</label><input type="number" id="lmp-steps" value="500"></div>
+      <div class="field"><label>Cutoff (Å)</label><input type="number" id="lmp-cut" value="12.0" step="0.5"></div>
+      <div class="field"><label>Thermo Freq</label><input type="number" id="lmp-thermo" value="1000"></div>
+      <div class="field"><label>Dump Freq</label><input type="number" id="lmp-dump" value="1000"></div>
+      <div class="field"><label>Minimise First</label><select id="lmp-min"><option value="true">Yes</option><option value="false">No</option></select></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goTo(2)">← Back</button>
+    <button class="btn btn-primary btn-lg" onclick="launchSimulation()">⚡ Launch Simulation →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL 4: Running -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-4">
+  <div class="card">
+    <div class="card-title">Pipeline Execution</div>
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;">
+        <span style="font-weight:700">Overall Progress</span>
+        <span id="prog-pct" style="color:var(--accent)">0%</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+    </div>
+    <div class="stages" id="stages">
+      <div class="stage pending" id="st-upload">   <div class="stage-ico">📤</div><div class="stage-info"><div class="stage-name">Upload Files</div><div class="stage-desc">POST /api/upload → validate .pdb + .lt</div></div><div class="stage-stat">Pending</div></div>
+      <div class="stage pending" id="st-moltemplate"><div class="stage-ico">🔧</div><div class="stage-info"><div class="stage-name">Moltemplate</div><div class="stage-desc">Generate LAMMPS force field files</div></div><div class="stage-stat">Pending</div></div>
+      <div class="stage pending" id="st-packmol">  <div class="stage-ico">📦</div><div class="stage-info"><div class="stage-name">Packmol</div><div class="stage-desc">Pack molecules into simulation box</div></div><div class="stage-stat">Pending</div></div>
+      <div class="stage pending" id="st-lammps">   <div class="stage-ico">⚡</div><div class="stage-info"><div class="stage-name">LAMMPS MD Run</div><div class="stage-desc">Execute molecular dynamics simulation</div></div><div class="stage-stat">Pending</div></div>
+      <div class="stage pending" id="st-post">     <div class="stage-ico">📊</div><div class="stage-info"><div class="stage-name">Package Results</div><div class="stage-desc">Zip output files for download</div></div><div class="stage-stat">Pending</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Live Log</div>
+    <div class="terminal">
+      <div class="term-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span style="margin-left:8px">pipeline.log</span><span style="margin-left:auto" id="log-live">● connecting</span></div>
+      <div class="term-body" id="log-body"><div class="l-info">// Waiting for pipeline to start...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANEL 5: Results -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-5">
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-val" id="r-atoms">—</div><div class="stat-lbl">Atoms</div></div>
+    <div class="stat-box"><div class="stat-val" id="r-steps">—</div><div class="stat-lbl">Steps</div></div>
+    <div class="stat-box"><div class="stat-val" id="r-time">—</div><div class="stat-lbl">Wall Time</div></div>
+    <div class="stat-box"><div class="stat-val" id="r-temp">—</div><div class="stat-lbl">Avg Temp K</div></div>
+  </div>
+  <div class="results-grid">
+    <div class="res-card"><div class="res-icon">💾</div><div class="res-name">system.data</div><div class="res-desc">LAMMPS data — atoms, bonds, angles</div><button class="btn-dl" onclick="dlFile('system.data')">⬇ Download</button></div>
+    <div class="res-card"><div class="res-icon">📐</div><div class="res-name">system.in</div><div class="res-desc">LAMMPS input script</div><button class="btn-dl" onclick="dlFile('system.in')">⬇ Download</button></div>
+    <div class="res-card"><div class="res-icon">🎞️</div><div class="res-name">traj.lammpstrj</div><div class="res-desc">Trajectory — open in VMD or OVITO</div><button class="btn-dl" onclick="dlFile('traj.lammpstrj')">⬇ Download</button></div>
+    <div class="res-card"><div class="res-icon">📈</div><div class="res-name">thermo.log</div><div class="res-desc">Energy, pressure, temperature</div><button class="btn-dl" onclick="dlFile('log.lammps')">⬇ Download</button></div>
+    <div class="res-card"><div class="res-icon">📦</div><div class="res-name">packed.pdb</div><div class="res-desc">Initial configuration from Packmol</div><button class="btn-dl" onclick="dlFile('packed.pdb')">⬇ Download</button></div>
+    <div class="res-card"><div class="res-icon">🗂️</div><div class="res-name">results.zip</div><div class="res-desc">All files bundled</div><button class="btn-dl" onclick="dlFile('results.zip')">⬇ Download All</button></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="resetAll()">🔄 New Simulation</button>
+    <button class="btn btn-success" onclick="dlFile('results.zip')">⬇ Download All Results</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG — this URL is set automatically from the repo
+// ═══════════════════════════════════════════════════════════════
+
+// IMPORTANT: Replace YOUR_HF_USERNAME and YOUR_SPACE_NAME
+// with your actual Hugging Face username and space name
+// after you create the space on huggingface.co
+const API_BASE = "https://YOUR_HF_USERNAME-YOUR_SPACE_NAME.hf.space";
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+
+let uploadCount = 1;
+let uploadedFiles = [];   // [{id, name, pdb:File, lt:File}]
+let molecules    = [];    // [{name, count, fileId}]
+let currentJobId = null;
+let pollTimer    = null;
+let logIndex     = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+
+function goTo(n) {
+  for (let i=1;i<=5;i++) {
+    document.getElementById('panel-'+i).classList.toggle('active', i===n);
+    const s = document.getElementById('step-'+i);
+    s.classList.remove('active','done');
+    if (i<n) s.classList.add('done');
+    else if (i===n) s.classList.add('active');
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEALTH CHECK — on load
+// ═══════════════════════════════════════════════════════════════
+
+async function checkHealth() {
+  const badge = document.getElementById('conn-badge');
+  const urlDisplay = document.getElementById('hf-url-display');
+  urlDisplay.textContent = API_BASE;
+  try {
+    const res = await fetch(`${API_BASE}/api/health`, {signal: AbortSignal.timeout(8000)});
+    const data = await res.json();
+    const allOk = data.moltemplate && data.packmol && data.lammps;
+    badge.textContent = allOk ? '⬤ Connected' : '⚠ Tools missing';
+    badge.style.color = allOk ? 'var(--accent)' : '#f59e0b';
+    badge.style.borderColor = allOk ? 'rgba(0,255,157,0.4)' : 'rgba(245,158,11,0.4)';
+  } catch(e) {
+    badge.textContent = '⬤ Offline — check API_BASE';
+    badge.style.color = 'var(--accent3)';
+    badge.style.borderColor = 'rgba(255,107,53,0.4)';
+  }
+}
+checkHealth();
+
+// ═══════════════════════════════════════════════════════════════
+// FILE UPLOADS
+// ═══════════════════════════════════════════════════════════════
+
+function handleUpload(input, type, idx) {
+  const file = input.files[0];
+  if (!file) return;
+  let entry = uploadedFiles.find(u=>u.id===idx);
+  if (!entry) { entry={id:idx,name:'',pdb:null,lt:null}; uploadedFiles.push(entry); }
+  entry[type] = file;
+  entry.name = file.name.replace(/\.(pdb|lt)$/i,'');
+  const el = document.getElementById(`${type}-status-${idx}`);
+  if(el) el.innerHTML = `<div class="uploaded-ok">✓ ${file.name}</div>`;
+  refreshFileSelector();
+}
+
+function addUploadRow() {
+  uploadCount++;
+  const c = document.getElementById('upload-entries');
+  const d = document.createElement('div');
+  d.style.cssText = 'padding:18px;background:var(--surface);border-radius:8px;border:1px solid var(--border);margin-bottom:14px;';
+  d.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">Molecule #${uploadCount}</div>
+    <div class="field-row">
+      <div class="field"><label>PDB File</label>
+        <div class="upload-zone"><input type="file" accept=".pdb" onchange="handleUpload(this,'pdb',${uploadCount})">
+          <div class="upload-icon">🧪</div><div class="upload-label"><strong>Click</strong> to upload .pdb</div></div>
+        <div id="pdb-status-${uploadCount}"></div></div>
+      <div class="field"><label>LT File</label>
+        <div class="upload-zone"><input type="file" accept=".lt" onchange="handleUpload(this,'lt',${uploadCount})">
+          <div class="upload-icon">⚗️</div><div class="upload-label"><strong>Click</strong> to upload .lt</div></div>
+        <div id="lt-status-${uploadCount}"></div></div>
+    </div>`;
+  c.appendChild(d);
+}
+
+function refreshFileSelector() {
+  const sel = document.getElementById('new-file');
+  sel.innerHTML = '<option value="">-- select --</option>';
+  uploadedFiles.forEach(u => {
+    sel.innerHTML += `<option value="${u.id}">${u.name} ${u.pdb?'[pdb]':''} ${u.lt?'[lt]':''}</option>`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MOLECULES
+// ═══════════════════════════════════════════════════════════════
+
+function addMolecule() {
+  const name  = document.getElementById('new-name').value.trim().toUpperCase();
+  const count = parseInt(document.getElementById('new-count').value);
+  const fileId= parseInt(document.getElementById('new-file').value);
+  if (!name || !count) return;
+  molecules.push({name,count,fileId});
+  renderMolecules();
+  document.getElementById('new-name').value='';
+  document.getElementById('new-count').value='100';
+}
+
+function removeMolecule(i) { molecules.splice(i,1); renderMolecules(); }
+
+function renderMolecules() {
+  const c = document.getElementById('mol-rows');
+  if (!molecules.length) {
+    c.innerHTML='<div class="mol-row" style="grid-template-columns:1fr;color:var(--muted);font-size:12px;">No molecules added yet.</div>';
+    return;
+  }
+  c.innerHTML = molecules.map((m,i)=>{
+    const f = uploadedFiles.find(u=>u.id===m.fileId);
+    return `<div class="mol-row">
+      <div class="mol-name">${m.name}</div>
+      <div class="mol-count">${m.count.toLocaleString()}</div>
+      <div>${f?.pdb?'<span class="tag tag-pdb">.pdb</span>':''}${f?.lt?'<span class="tag tag-lt">.lt</span>':''}</div>
+      <button class="btn-rm" onclick="removeMolecule(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LAUNCH SIMULATION — real API calls
+// ═══════════════════════════════════════════════════════════════
+
+async function launchSimulation() {
+  goTo(4);
+  logIndex = 0;
+  clearLog();
+  addLog('Starting pipeline...', 'step');
+
+  // ── Step 1: Upload files ──────────────────────────────────
+  setStage('st-upload','running','● Uploading');
+  setProgress(5);
+  addLog('Uploading files to Hugging Face server...', 'info');
+
+  const formData = new FormData();
+  for (const u of uploadedFiles) {
+    if (u.pdb) formData.append('files', u.pdb, u.pdb.name);
+    if (u.lt)  formData.append('files', u.lt,  u.lt.name);
+  }
+
+  let jobId;
+  try {
+    const res  = await fetch(`${API_BASE}/api/upload`, {method:'POST', body:formData});
+    const data = await res.json();
+    jobId = data.job_id;
+    currentJobId = jobId;
+    addLog(`✓ Files uploaded — job_id: ${jobId}`, 'success');
+    setStage('st-upload','done','✓ Done');
+    setProgress(15);
+  } catch(e) {
+    addLog(`Upload failed: ${e.message}`, 'error');
+    setStage('st-upload','error','✗ Failed');
+    return;
+  }
+
+  // ── Step 2: Send run config ───────────────────────────────
+  const config = {
+    molecules: molecules.map(m => {
+      const f = uploadedFiles.find(u=>u.id===m.fileId)||{};
+      return {
+        name: m.name,
+        count: m.count,
+        pdb_filename: f.pdb?.name || '',
+        lt_filename:  f.lt?.name  || '',
+      };
+    }),
+    box: {
+      x: parseFloat(document.getElementById('box-x').value),
+      y: parseFloat(document.getElementById('box-y').value),
+      z: parseFloat(document.getElementById('box-z').value),
+      tolerance: parseFloat(document.getElementById('pack-tol').value),
+    },
+    lammps: {
+      ensemble:    document.getElementById('lmp-ens').value,
+      temperature: parseFloat(document.getElementById('lmp-T').value),
+      pressure:    parseFloat(document.getElementById('lmp-P').value),
+      timestep:    parseFloat(document.getElementById('lmp-dt').value),
+      run_steps:   parseInt(document.getElementById('lmp-steps').value) * 1000,
+      thermo_freq: parseInt(document.getElementById('lmp-thermo').value),
+      dump_freq:   parseInt(document.getElementById('lmp-dump').value),
+      cutoff:      parseFloat(document.getElementById('lmp-cut').value),
+      minimize:    document.getElementById('lmp-min').value === 'true',
+    }
+  };
+
+  try {
+    await fetch(`${API_BASE}/api/run/${jobId}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(config)
+    });
+    addLog('Pipeline started on server', 'info');
+  } catch(e) {
+    addLog(`Failed to start: ${e.message}`, 'error');
+    return;
+  }
+
+  // ── Step 3: Poll for status ───────────────────────────────
+  document.getElementById('log-live').textContent = '● live';
+  document.getElementById('log-live').style.color = 'var(--accent)';
+  startPolling(jobId);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POLLING
+// ═══════════════════════════════════════════════════════════════
+
+function startPolling(jobId) {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const res  = await fetch(`${API_BASE}/api/status/${jobId}?since_log=${logIndex}`);
+      const data = await res.json();
+
+      // Append new log lines
+      for (const line of (data.log||[])) {
+        addLog(line.msg, line.level||'info');
+        logIndex++;
+      }
+
+      // Update progress
+      setProgress(data.progress||0);
+
+      // Update stage indicators
+      updateStages(data.stage, data.status);
+
+      // Done or error
+      if (data.status === 'done') {
+        clearInterval(pollTimer);
+        document.getElementById('log-live').textContent = '✓ complete';
+        finishResults(data);
+        setTimeout(()=>goTo(5), 1000);
+      } else if (data.status === 'error') {
+        clearInterval(pollTimer);
+        document.getElementById('log-live').textContent = '✗ error';
+        document.getElementById('log-live').style.color = 'var(--accent3)';
+        addLog(`Pipeline error: ${data.error}`, 'error');
+      }
+    } catch(e) {
+      addLog(`Polling error: ${e.message}`, 'warn');
+    }
+  }, 2000);
+}
+
+function updateStages(stage, status) {
+  const stageMap = {
+    'moltemplate': 'st-moltemplate',
+    'packmol':     'st-packmol',
+    'lammps':      'st-lammps',
+    'post':        'st-post',
+  };
+  const order = ['moltemplate','packmol','lammps','post'];
+  const currentIdx = order.indexOf(stage);
+  order.forEach((s,i) => {
+    const el = document.getElementById(stageMap[s]);
+    if (!el) return;
+    if (i < currentIdx) setStage(stageMap[s], 'done', '✓ Done');
+    else if (s === stage) {
+      const stat = status==='error' ? 'error' : 'running';
+      const label = status==='error' ? '✗ Error' : '● Running';
+      setStage(stageMap[s], stat, label);
+    }
+  });
+}
+
+function finishResults(data) {
+  const mols = molecules.length ? molecules : [{count:100}];
+  const totalAtoms = mols.reduce((s,m)=>s+(m.count*10),0);
+  document.getElementById('r-atoms').textContent = totalAtoms.toLocaleString();
+  document.getElementById('r-steps').textContent = (parseInt(document.getElementById('lmp-steps').value)*1000).toLocaleString();
+  document.getElementById('r-time').textContent = data.finished_at ? 'Done' : '—';
+  document.getElementById('r-temp').textContent = document.getElementById('lmp-T').value;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DOWNLOAD
+// ═══════════════════════════════════════════════════════════════
+
+function dlFile(filename) {
+  if (!currentJobId) return alert('No completed job found.');
+  window.open(`${API_BASE}/api/download/${currentJobId}/${filename}`, '_blank');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+function addLog(msg, level='info') {
+  const body = document.getElementById('log-body');
+  const ts   = new Date().toLocaleTimeString('en',{hour12:false});
+  body.innerHTML += `<div class="l-${level}">[${ts}] ${msg}</div>`;
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log-body').innerHTML = '';
+}
+
+function setProgress(pct) {
+  document.getElementById('prog-bar').style.width = pct+'%';
+  document.getElementById('prog-pct').textContent  = pct+'%';
+}
+
+function setStage(id, state, label) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = `stage ${state}`;
+  el.querySelector('.stage-stat').textContent = label;
+}
+
+function resetAll() {
+  uploadedFiles=[]; molecules=[]; uploadCount=1; currentJobId=null; logIndex=0;
+  if(pollTimer) clearInterval(pollTimer);
+  document.getElementById('upload-entries').innerHTML = `
+    <div style="padding:18px;background:var(--surface);border-radius:8px;border:1px solid var(--border);margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">Molecule #1</div>
+      <div class="field-row">
+        <div class="field"><label>PDB File</label>
+          <div class="upload-zone"><input type="file" accept=".pdb" onchange="handleUpload(this,'pdb',1)">
+            <div class="upload-icon">🧪</div><div class="upload-label"><strong>Click</strong> to upload .pdb</div></div>
+          <div id="pdb-status-1"></div></div>
+        <div class="field"><label>LT File</label>
+          <div class="upload-zone"><input type="file" accept=".lt" onchange="handleUpload(this,'lt',1)">
+            <div class="upload-icon">⚗️</div><div class="upload-label"><strong>Click</strong> to upload .lt</div></div>
+          <div id="lt-status-1"></div></div>
+      </div>
+    </div>`;
+  renderMolecules();
+  goTo(1);
+}
+
+// init
+renderMolecules();
+</script>
+</body>
+</html>
