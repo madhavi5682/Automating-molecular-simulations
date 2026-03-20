@@ -426,21 +426,69 @@ select option{background:var(--surface);}
   </div>
   <div class="card">
     <div class="card-title">Add New Molecule</div>
-    <div class="field"><label>Molecule Name</label>
-      <input type="text" id="bank-name" placeholder="e.g. ethanol, toluene (lowercase)"></div>
-    <div class="row2">
-      <div class="field" style="margin:0"><label>PDB File</label>
-        <div class="upload-zone"><input type="file" accept=".pdb" id="bank-pdb" onchange="markUpload(this,'bank-pdb-status')">
-        <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb</div></div>
-        <div id="bank-pdb-status"></div></div>
-      <div class="field" style="margin:0"><label>LT File</label>
-        <div class="upload-zone"><input type="file" accept=".lt" id="bank-lt" onchange="markUpload(this,'bank-lt-status')">
-        <div class="upload-zone-lbl"><strong>Click</strong> to upload .lt</div></div>
-        <div id="bank-lt-status"></div></div>
+
+    <!-- Toggle between two methods -->
+    <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <button id="method-btn-ligpargen" onclick="setMethod('ligpargen')"
+        style="flex:1;padding:9px;border-radius:6px;font-family:var(--mono);font-size:11px;
+        font-weight:700;cursor:pointer;border:1px solid var(--accent);
+        background:rgba(0,255,157,0.08);color:var(--accent);">
+        🧪 From LigParGen (.data + .pdb)
+      </button>
+      <button id="method-btn-manual" onclick="setMethod('manual')"
+        style="flex:1;padding:9px;border-radius:6px;font-family:var(--mono);font-size:11px;
+        font-weight:700;cursor:pointer;border:1px solid var(--border);
+        background:var(--surface);color:var(--muted);">
+        📁 Manual (.lt + .pdb)
+      </button>
     </div>
-    <div style="margin-top:14px;">
-      <button class="btn btn-primary" id="bank-add-btn" onclick="bankAdd()">+ Add to Bank</button>
+
+    <!-- METHOD 1: LigParGen -->
+    <div id="method-ligpargen">
+      <div class="alert alert-info">
+        🧪 Download from <strong>LigParGen</strong> → click <strong>LAMMPS</strong> button (gives .data file) and <strong>PDB</strong> button. The server will convert .data → .lt automatically using ltemplify.
+      </div>
+      <div class="field"><label>Molecule Name</label>
+        <input type="text" id="lpg-name" placeholder="e.g. methane, ethanol (lowercase)"></div>
+      <div class="row2">
+        <div class="field" style="margin:0"><label>LAMMPS Data File (.data)</label>
+          <div class="upload-zone"><input type="file" id="lpg-data" onchange="markUpload(this,'lpg-data-status')">
+          <div class="upload-zone-lbl"><strong>Click</strong> to upload .data file<br><span style="font-size:9px">(the .py file from LigParGen — rename to .data)</span></div></div>
+          <div id="lpg-data-status"></div></div>
+        <div class="field" style="margin:0"><label>PDB File (.pdb)</label>
+          <div class="upload-zone"><input type="file" accept=".pdb" id="lpg-pdb" onchange="markUpload(this,'lpg-pdb-status')">
+          <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb file</div></div>
+          <div id="lpg-pdb-status"></div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" id="lpg-convert-btn" onclick="convertMolecule()">
+          🔄 Convert &amp; Add to Bank
+        </button>
+      </div>
     </div>
+
+    <!-- METHOD 2: Manual -->
+    <div id="method-manual" style="display:none">
+      <div class="alert alert-info">
+        📁 Upload .lt and .pdb files directly if you already have them.
+      </div>
+      <div class="field"><label>Molecule Name</label>
+        <input type="text" id="bank-name" placeholder="e.g. ethanol, toluene (lowercase)"></div>
+      <div class="row2">
+        <div class="field" style="margin:0"><label>PDB File</label>
+          <div class="upload-zone"><input type="file" accept=".pdb" id="bank-pdb" onchange="markUpload(this,'bank-pdb-status')">
+          <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb</div></div>
+          <div id="bank-pdb-status"></div></div>
+        <div class="field" style="margin:0"><label>LT File</label>
+          <div class="upload-zone"><input type="file" accept=".lt" id="bank-lt" onchange="markUpload(this,'bank-lt-status')">
+          <div class="upload-zone-lbl"><strong>Click</strong> to upload .lt</div></div>
+          <div id="bank-lt-status"></div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" id="bank-add-btn" onclick="bankAdd()">+ Add to Bank</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -706,7 +754,56 @@ function renderBank() {
       <button class="mol-card-del" onclick="bankDel('${m.name}')">🗑 Delete</button>
     </div>`).join('');
 }
-function markUpload(input, statusId) {
+function setMethod(method) {
+  document.getElementById('method-ligpargen').style.display = method==='ligpargen' ? 'block' : 'none';
+  document.getElementById('method-manual').style.display    = method==='manual'    ? 'block' : 'none';
+  const lpgBtn = document.getElementById('method-btn-ligpargen');
+  const manBtn = document.getElementById('method-btn-manual');
+  if (method === 'ligpargen') {
+    lpgBtn.style.borderColor='var(--accent)'; lpgBtn.style.background='rgba(0,255,157,0.08)'; lpgBtn.style.color='var(--accent)';
+    manBtn.style.borderColor='var(--border)'; manBtn.style.background='var(--surface)';        manBtn.style.color='var(--muted)';
+  } else {
+    manBtn.style.borderColor='var(--accent)'; manBtn.style.background='rgba(0,255,157,0.08)'; manBtn.style.color='var(--accent)';
+    lpgBtn.style.borderColor='var(--border)'; lpgBtn.style.background='var(--surface)';        lpgBtn.style.color='var(--muted)';
+  }
+}
+
+async function convertMolecule() {
+  const name     = document.getElementById('lpg-name').value.trim().toLowerCase();
+  const dataFile = document.getElementById('lpg-data').files[0];
+  const pdbFile  = document.getElementById('lpg-pdb').files[0];
+  if (!name)     return alert('Enter a molecule name.');
+  if (!dataFile) return alert('Upload the LAMMPS data file (.data) from LigParGen.');
+  if (!pdbFile)  return alert('Upload the PDB file from LigParGen.');
+
+  const btn = document.getElementById('lpg-convert-btn');
+  btn.innerHTML = '<span class="spinner"></span> Converting...';
+  btn.disabled  = true;
+
+  const form = new FormData();
+  form.append('name',      name);
+  form.append('data_file', dataFile, dataFile.name);
+  form.append('pdb_file',  pdbFile,  pdbFile.name);
+
+  try {
+    const r = await fetch(`${API_BASE}/api/molecules/convert`, {method:'POST', body:form});
+    const d = await r.json();
+    if (d.converted) {
+      alert(`✅ ${name} converted and added to bank!`);
+      document.getElementById('lpg-name').value = '';
+      document.getElementById('lpg-data').value = '';
+      document.getElementById('lpg-pdb').value  = '';
+      document.getElementById('lpg-data-status').innerHTML = '';
+      document.getElementById('lpg-pdb-status').innerHTML  = '';
+      await loadMolecules();
+    } else {
+      alert('Conversion failed: ' + (d.detail || JSON.stringify(d)));
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { btn.innerHTML = '🔄 Convert & Add to Bank'; btn.disabled = false; }
+}
+
+
   const f = input.files[0];
   if (!f) return;
   document.getElementById(statusId).innerHTML = `<div class="uploaded-ok">✓ ${f.name}</div>`;
