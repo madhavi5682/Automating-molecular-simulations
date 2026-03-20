@@ -19,8 +19,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   linear-gradient(90deg,rgba(0,255,157,0.03) 1px,transparent 1px);
   background-size:40px 40px;}
 .app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 80px;}
-
-/* Header */
 header{padding:24px 0 18px;border-bottom:1px solid var(--border);margin-bottom:28px;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
 .logo{font-family:var(--display);font-size:20px;font-weight:900;letter-spacing:-0.5px;}
@@ -29,8 +27,6 @@ header{padding:24px 0 18px;border-bottom:1px solid var(--border);margin-bottom:2
 .badge{font-size:11px;padding:6px 14px;border:1px solid rgba(0,255,157,0.3);border-radius:4px;
   color:var(--accent);background:rgba(0,255,157,0.05);}
 #conn-url{font-size:9px;color:var(--muted);margin-top:3px;text-align:right;}
-
-/* Tabs */
 .tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);}
 .tab{padding:10px 24px;font-family:var(--mono);font-size:11px;font-weight:700;
   letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;
@@ -41,8 +37,6 @@ header{padding:24px 0 18px;border-bottom:1px solid var(--border);margin-bottom:2
 .tab-panel{display:none;animation:fadeUp 0.3s ease;}
 .tab-panel.active{display:block;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-
-/* Pipeline diagram */
 .pipe{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
   gap:0;margin:0 0 28px;row-gap:10px;}
 .pipe-node{text-align:center;padding:10px 14px;background:var(--card);
@@ -51,47 +45,63 @@ header{padding:24px 0 18px;border-bottom:1px solid var(--border);margin-bottom:2
 .pipe-node-name{font-size:10px;font-weight:700;}
 .pipe-node-sub{font-size:8px;color:var(--muted);margin-top:2px;}
 .pipe-arrow{color:var(--accent);font-size:14px;padding:0 5px;opacity:0.5;}
-
-/* Cards */
 .card{background:var(--card);border:1px solid var(--border);border-radius:8px;
   padding:22px;margin-bottom:14px;position:relative;overflow:hidden;}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.2;}
 .card-title{font-family:var(--display);font-size:10px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;}
-
-/* Forms */
+  letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;}
 .field{margin-bottom:14px;}
 label{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
   color:var(--muted);margin-bottom:6px;}
-input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);
+input,select{width:100%;background:var(--surface);border:1px solid var(--border);
   border-radius:6px;padding:9px 13px;color:var(--text);font-family:var(--mono);
   font-size:12px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);
-  box-shadow:0 0 0 2px rgba(0,255,157,0.08);}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,255,157,0.08);}
 select option{background:var(--surface);}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
-@media(max-width:600px){.row2,.row3{grid-template-columns:1fr;}}
+.row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+@media(max-width:640px){.row2,.row3,.row4{grid-template-columns:1fr 1fr;}}
 
-/* Molecule rows */
+/* Ensemble cards */
+.ensemble-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px;}
+@media(max-width:600px){.ensemble-grid{grid-template-columns:1fr;}}
+.ens-card{border:1px solid var(--border);border-radius:10px;padding:18px 14px;cursor:pointer;
+  text-align:center;transition:all 0.2s;background:var(--surface);user-select:none;}
+.ens-card:hover{border-color:rgba(0,255,157,0.3);transform:translateY(-2px);}
+.ens-card.selected{border-color:var(--accent);background:rgba(0,255,157,0.06);
+  box-shadow:0 0 20px rgba(0,255,157,0.12);}
+.ens-icon{font-size:26px;margin-bottom:8px;}
+.ens-name{font-family:var(--display);font-size:14px;font-weight:700;margin-bottom:5px;}
+.ens-desc{font-size:10px;color:var(--muted);line-height:1.6;}
+.ens-card.selected .ens-name{color:var(--accent);}
+.ens-card.selected .ens-desc{color:rgba(230,237,243,0.7);}
+
+/* Param sections */
+.param-sec{border:1px solid var(--border);border-radius:8px;padding:18px;
+  margin-bottom:14px;background:var(--surface);animation:fadeUp 0.2s ease;}
+.param-sec-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.ptag{font-size:9px;padding:2px 8px;border-radius:20px;font-weight:700;}
+.ptag-all{background:rgba(0,255,157,0.1);color:var(--accent);}
+.ptag-nvt{background:rgba(168,85,247,0.15);color:var(--purple);}
+.ptag-npt{background:rgba(0,102,255,0.15);color:#60a5fa;}
+
 .mol-list{margin-bottom:12px;}
-.mol-row{display:grid;grid-template-columns:2fr 100px auto;gap:10px;
-  align-items:center;padding:8px 12px;background:var(--surface);
-  border:1px solid var(--border);border-radius:6px;margin-bottom:6px;}
+.mol-row{display:grid;grid-template-columns:2fr 100px auto;gap:10px;align-items:center;
+  padding:8px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;margin-bottom:6px;}
 .mol-name-badge{font-size:12px;font-weight:700;}
 .mol-count-input{width:100%!important;text-align:center;padding:6px 8px!important;}
 .btn-rm{background:none;border:1px solid rgba(255,107,53,0.3);color:var(--orange);
-  border-radius:4px;padding:4px 8px;cursor:pointer;font-size:11px;
-  font-family:var(--mono);transition:all 0.15s;}
+  border-radius:4px;padding:4px 8px;cursor:pointer;font-size:11px;font-family:var(--mono);transition:all 0.15s;}
 .btn-rm:hover{background:rgba(255,107,53,0.1);}
 .mol-empty{color:var(--muted);font-size:11px;padding:12px;text-align:center;
-  border:1px dashed var(--border);border-radius:6px;}
-
-/* Add molecule row */
+  border:1px dashed var(--border);border-radius:6px;margin-bottom:12px;}
 .add-mol-row{display:grid;grid-template-columns:1fr 100px auto;gap:10px;align-items:end;}
 
-/* Upload zone */
 .upload-zone{border:1px dashed var(--border);border-radius:6px;padding:16px;
   text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
 .upload-zone:hover{border-color:var(--accent);background:rgba(0,255,157,0.02);}
@@ -102,20 +112,7 @@ select option{background:var(--surface);}
   background:rgba(0,102,255,0.1);border:1px solid rgba(0,102,255,0.3);
   border-radius:5px;margin-top:6px;font-size:10px;color:#60a5fa;}
 
-/* Template editor */
-.editor-wrap{background:#04070d;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.editor-bar{background:var(--surface);border-bottom:1px solid var(--border);
-  padding:8px 14px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--muted);}
-.dots{display:flex;gap:5px;}
-.dot{width:8px;height:8px;border-radius:50%;}
-.dot.r{background:#ff5f57;}.dot.y{background:#ffbd2e;}.dot.g{background:#28ca41;}
-.editor-wrap textarea{background:#04070d;border:none;border-radius:0;
-  padding:14px;font-size:11px;line-height:1.8;min-height:220px;resize:vertical;
-  color:#94a3b8;font-family:var(--mono);}
-.editor-wrap textarea:focus{box-shadow:none;border:none;}
-
-/* Stepper */
-.stepper{display:flex;align-items:center;margin-bottom:22px;overflow-x:auto;}
+.stepper{display:flex;align-items:center;margin-bottom:22px;overflow-x:auto;padding-bottom:4px;}
 .step{display:flex;align-items:center;gap:7px;flex-shrink:0;}
 .step-num{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
@@ -126,13 +123,10 @@ select option{background:var(--surface);}
 .step-label{font-size:10px;color:var(--muted);white-space:nowrap;}
 .step.active .step-label{color:var(--text);}
 .step.done .step-label{color:var(--blue);}
-.step-line{flex:1;height:1px;background:var(--border);min-width:20px;max-width:60px;}
-
-/* Sub panels */
+.step-line{flex:1;height:1px;background:var(--border);min-width:16px;max-width:50px;}
 .sub{display:none;animation:fadeUp 0.3s ease;}
 .sub.active{display:block;}
 
-/* Stages */
 .stages{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
 .stage{display:flex;align-items:center;gap:12px;padding:12px 16px;
   background:var(--surface);border:1px solid var(--border);border-radius:8px;transition:all 0.3s;}
@@ -153,9 +147,6 @@ select option{background:var(--surface);}
 .prog-wrap{background:var(--surface);border-radius:100px;height:4px;margin-bottom:4px;overflow:hidden;}
 .prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));
   border-radius:100px;transition:width 0.5s ease;}
-.prog-pct{font-size:10px;color:var(--muted);text-align:right;}
-
-/* Terminal */
 .terminal{background:#04070d;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
 .term-bar{background:var(--surface);border-bottom:1px solid var(--border);
   padding:8px 14px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
@@ -164,11 +155,9 @@ select option{background:var(--surface);}
 .l-info{color:#4a5568;}.l-success{color:var(--accent);}.l-cmd{color:#60a5fa;}
 .l-warn{color:#f59e0b;}.l-error{color:var(--orange);}.l-step{color:var(--purple);font-weight:700;}
 
-/* Results */
 .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
 @media(max-width:560px){.res-grid{grid-template-columns:1fr;}}
-.res-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:16px;transition:all 0.2s;}
+.res-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;transition:all 0.2s;}
 .res-card:hover{border-color:var(--accent);transform:translateY(-2px);}
 .res-icon{font-size:22px;margin-bottom:7px;}
 .res-name{font-size:12px;font-weight:700;margin-bottom:3px;}
@@ -178,18 +167,13 @@ select option{background:var(--surface);}
   color:var(--accent);border-radius:4px;font-size:10px;font-weight:700;
   cursor:pointer;font-family:var(--mono);transition:all 0.15s;}
 .btn-dl:hover{background:rgba(0,255,157,0.15);}
-
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
 @media(max-width:560px){.stat-row{grid-template-columns:1fr 1fr;}}
-.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:12px;text-align:center;}
-.stat-val{font-family:var(--display);font-size:20px;font-weight:700;color:var(--accent);}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+.stat-val{font-family:var(--display);font-size:18px;font-weight:700;color:var(--accent);}
 .stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
-
-/* Buttons */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:6px;
-  font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;
-  transition:all 0.2s;border:none;}
+  font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;border:none;}
 .btn-primary{background:var(--accent);color:#000;box-shadow:0 0 20px rgba(0,255,157,0.2);}
 .btn-primary:hover{box-shadow:0 0 30px rgba(0,255,157,0.5);transform:translateY(-1px);}
 .btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text);}
@@ -199,8 +183,8 @@ select option{background:var(--surface);}
 .btn-lg{padding:13px 30px;font-size:13px;}
 .btn:disabled{opacity:0.35;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
 .btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:10px;flex-wrap:wrap;}
-
-/* Molecule bank grid */
+.alert{display:flex;gap:10px;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:11px;line-height:1.7;}
+.alert-info{background:rgba(0,255,157,0.05);border:1px solid rgba(0,255,157,0.2);}
 .bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px;}
 .mol-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;transition:all 0.2s;}
 .mol-card.ready{border-color:rgba(0,255,157,0.2);}
@@ -212,16 +196,11 @@ select option{background:var(--surface);}
 .tag-miss{background:rgba(255,107,53,0.12);color:var(--orange);}
 .mol-card-del{background:none;border:1px solid rgba(255,107,53,0.2);color:var(--orange);
   border-radius:4px;padding:3px 8px;cursor:pointer;font-size:10px;font-family:var(--mono);}
-
-/* Alert */
-.alert{display:flex;gap:10px;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:11px;line-height:1.7;}
-.alert-info{background:rgba(0,255,157,0.05);border:1px solid rgba(0,255,157,0.2);}
-
-/* Spinner */
 .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(0,255,157,0.2);
   border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
+.dot{width:8px;height:8px;border-radius:50%;}
+.dot.r{background:#ff5f57;}.dot.y{background:#ffbd2e;}.dot.g{background:#28ca41;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
@@ -240,7 +219,6 @@ select option{background:var(--surface);}
   </div>
 </header>
 
-<!-- Pipeline diagram -->
 <div class="pipe">
   <div class="pipe-node"><div class="pipe-node-ico">🧬</div><div class="pipe-node-name">LigParGen</div><div class="pipe-node-sub">.pdb + .lt</div></div>
   <div class="pipe-arrow">→</div>
@@ -253,96 +231,139 @@ select option{background:var(--surface);}
   <div class="pipe-node"><div class="pipe-node-ico">📊</div><div class="pipe-node-name">Results</div><div class="pipe-node-sub">download</div></div>
 </div>
 
-<!-- Main tabs -->
 <div class="tabs">
   <button class="tab active" onclick="switchTab(this,'tab-run')">⚡ Run Simulation</button>
   <button class="tab" onclick="switchTab(this,'tab-bank')">🧬 Molecule Bank</button>
 </div>
 
-<!-- ═══════════════════════ TAB: RUN ═══════════════════════ -->
+<!-- ═══════════════ TAB: RUN ═══════════════ -->
 <div class="tab-panel active" id="tab-run">
 
-  <!-- Stepper -->
   <div class="stepper">
-    <div class="step active" id="s1"><div class="step-num">1</div><div class="step-label">Select Molecules</div></div>
+    <div class="step active" id="s1"><div class="step-num">1</div><div class="step-label">Molecules</div></div>
     <div class="step-line"></div>
-    <div class="step" id="s2"><div class="step-num">2</div><div class="step-label">Box & Template</div></div>
+    <div class="step" id="s2"><div class="step-num">2</div><div class="step-label">Ensemble</div></div>
     <div class="step-line"></div>
-    <div class="step" id="s3"><div class="step-num">3</div><div class="step-label">Running</div></div>
+    <div class="step" id="s3"><div class="step-num">3</div><div class="step-label">Parameters</div></div>
     <div class="step-line"></div>
-    <div class="step" id="s4"><div class="step-num">4</div><div class="step-label">Results</div></div>
+    <div class="step" id="s4"><div class="step-num">4</div><div class="step-label">Running</div></div>
+    <div class="step-line"></div>
+    <div class="step" id="s5"><div class="step-num">5</div><div class="step-label">Results</div></div>
   </div>
 
-  <!-- Sub 1: Select molecules -->
+  <!-- STEP 1 — Molecules -->
   <div class="sub active" id="sub1">
     <div class="card">
       <div class="card-title">Select Molecules</div>
-      <div class="alert alert-info">
-        💡 Pick a molecule from the dropdown and set how many you want in the box. Add multiple molecules to create a mixture.
-      </div>
-
-      <!-- Selected molecules list -->
-      <div class="mol-list" id="mol-list">
-        <div class="mol-empty" id="mol-empty">No molecules added yet.</div>
-      </div>
-
-      <!-- Add row -->
+      <div class="alert alert-info">💡 Pick molecules and set counts. Add multiple to create a mixture.</div>
+      <div class="mol-list" id="mol-list"></div>
+      <div class="mol-empty" id="mol-empty">No molecules added yet.</div>
       <div class="add-mol-row">
-        <div class="field" style="margin:0">
-          <label>Molecule</label>
-          <select id="mol-select">
-            <option value="">Loading molecules...</option>
-          </select>
-        </div>
-        <div class="field" style="margin:0">
-          <label>Count</label>
-          <input type="number" id="mol-count" value="100" min="1" style="text-align:center;">
-        </div>
-        <div>
-          <label style="opacity:0">add</label>
-          <button class="btn btn-primary" onclick="addMol()" style="width:100%;justify-content:center;">+ Add</button>
-        </div>
+        <div class="field" style="margin:0"><label>Molecule</label>
+          <select id="mol-select"><option value="">Loading...</option></select></div>
+        <div class="field" style="margin:0"><label>Count</label>
+          <input type="number" id="mol-count" value="100" min="1" style="text-align:center;"></div>
+        <div><label style="opacity:0">x</label>
+          <button class="btn btn-primary" onclick="addMol()" style="width:100%;justify-content:center;">+ Add</button></div>
       </div>
     </div>
-    <div class="btn-row">
-      <div></div>
-      <button class="btn btn-primary" onclick="goStep(2)">Next: Box & Template →</button>
-    </div>
+    <div class="btn-row"><div></div>
+      <button class="btn btn-primary" onclick="goStep(2)">Next: Choose Ensemble →</button></div>
   </div>
 
-  <!-- Sub 2: Box + template -->
+  <!-- STEP 2 — Ensemble -->
   <div class="sub" id="sub2">
     <div class="card">
-      <div class="card-title">Simulation Box</div>
-      <div class="row3">
-        <div class="field"><label>Box X (Å)</label><input type="number" id="box-x" value="50"></div>
-        <div class="field"><label>Box Y (Å)</label><input type="number" id="box-y" value="50"></div>
-        <div class="field"><label>Box Z (Å)</label><input type="number" id="box-z" value="50"></div>
-        <div class="field"><label>Tolerance (Å)</label><input type="number" id="pack-tol" value="2.0" step="0.1"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">LAMMPS Run Template</div>
-      <div class="alert alert-info">
-        📝 Paste your LAMMPS <strong>run.in</strong> template. Use <strong>${SYSTEM_NAME}</strong> as placeholder — replaced automatically. Leave blank for a default NVT run at 300K.
-      </div>
-      <div class="editor-wrap">
-        <div class="editor-bar">
-          <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
-          <span style="margin-left:8px">run.in</span>
-          <button onclick="loadDefault()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:3px 10px;border-radius:4px;font-size:10px;cursor:pointer;font-family:var(--mono);">Load Default</button>
+      <div class="card-title">Choose Ensemble</div>
+      <div class="ensemble-grid">
+
+        <div class="ens-card selected" id="ens-NVT" onclick="selectEnsemble('NVT')">
+          <div class="ens-icon">🌡️</div>
+          <div class="ens-name">NVT</div>
+          <div class="ens-desc">Constant Volume + Temperature<br>Nosé-Hoover thermostat<br><br>Set: temperature, box size</div>
         </div>
-        <textarea id="lammps-tmpl" placeholder="Paste your LAMMPS template here, or click 'Load Default'..."></textarea>
+
+        <div class="ens-card" id="ens-NPT" onclick="selectEnsemble('NPT')">
+          <div class="ens-icon">🔩</div>
+          <div class="ens-name">NPT</div>
+          <div class="ens-desc">Constant Pressure + Temperature<br>Box volume can change<br><br>Set: temperature, pressure, box size</div>
+        </div>
+
+        <div class="ens-card" id="ens-NVE" onclick="selectEnsemble('NVE')">
+          <div class="ens-icon">⚡</div>
+          <div class="ens-name">NVE</div>
+          <div class="ens-desc">Constant Volume + Energy<br>No thermostat/barostat<br><br>Set: box size only</div>
+        </div>
+
       </div>
+
+      <div id="info-NVT" class="alert alert-info">🌡️ <b>NVT</b> — Temperature is controlled, volume is fixed. You will set start/end temperature and box dimensions.</div>
+      <div id="info-NPT" class="alert alert-info" style="display:none">🔩 <b>NPT</b> — Both temperature and pressure controlled. Box volume adjusts. You will set temperature, pressure, and initial box dimensions.</div>
+      <div id="info-NVE" class="alert alert-info" style="display:none">⚡ <b>NVE</b> — No thermostat or barostat. Total energy is conserved. Typically used after equilibration. Only box size required.</div>
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Next: Set Parameters →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 — Parameters -->
+  <div class="sub" id="sub3">
+    <div class="card">
+      <div class="card-title">Simulation Parameters
+        <span id="ens-badge" style="padding:3px 12px;border-radius:20px;font-size:10px;
+          background:rgba(0,255,157,0.12);color:var(--accent);font-weight:700;"></span>
+      </div>
+
+      <!-- Box — always shown -->
+      <div class="param-sec">
+        <div class="param-sec-title">📦 Simulation Box <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
+        <div class="row3">
+          <div class="field" style="margin:0"><label>Box X (Å)</label><input type="number" id="box-x" value="50" min="1"></div>
+          <div class="field" style="margin:0"><label>Box Y (Å)</label><input type="number" id="box-y" value="50" min="1"></div>
+          <div class="field" style="margin:0"><label>Box Z (Å)</label><input type="number" id="box-z" value="50" min="1"></div>
+        </div>
+      </div>
+
+      <!-- Temperature — NVT + NPT -->
+      <div class="param-sec" id="sec-temp">
+        <div class="param-sec-title">🌡️ Temperature <span class="ptag ptag-nvt" id="temp-tag">NVT / NPT</span></div>
+        <div class="row2">
+          <div class="field" style="margin:0"><label>Start Temperature (K)</label><input type="number" id="temp-start" value="300" min="1"></div>
+          <div class="field" style="margin:0"><label>End Temperature (K)</label><input type="number" id="temp-end" value="300" min="1"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:8px;">Set both to the same value for constant temperature. Use different values for a temperature ramp.</div>
+      </div>
+
+      <!-- Pressure — NPT only -->
+      <div class="param-sec" id="sec-press" style="display:none">
+        <div class="param-sec-title">🔩 Pressure <span class="ptag ptag-npt">NPT ONLY</span></div>
+        <div class="row2">
+          <div class="field" style="margin:0"><label>Start Pressure (atm)</label><input type="number" id="press-start" value="1.0" min="0" step="0.1"></div>
+          <div class="field" style="margin:0"><label>End Pressure (atm)</label><input type="number" id="press-end" value="1.0" min="0" step="0.1"></div>
+        </div>
+      </div>
+
+      <!-- Run params — always shown -->
+      <div class="param-sec">
+        <div class="param-sec-title">⏱️ Run Parameters <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
+        <div class="row4">
+          <div class="field" style="margin:0"><label>Timestep (fs)</label><input type="number" id="timestep" value="1.0" min="0.1" step="0.1"></div>
+          <div class="field" style="margin:0"><label>Run Steps</label><input type="number" id="run-steps" value="100000" min="100"></div>
+          <div class="field" style="margin:0"><label>Thermo Freq</label><input type="number" id="thermo-freq" value="1000" min="1"></div>
+          <div class="field" style="margin:0"><label>Dump Freq</label><input type="number" id="dump-freq" value="1000" min="1"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
       <button class="btn btn-primary btn-lg" onclick="launch()">⚡ Launch Simulation →</button>
     </div>
   </div>
 
-  <!-- Sub 3: Running -->
-  <div class="sub" id="sub3">
+  <!-- STEP 4 — Running -->
+  <div class="sub" id="sub4">
     <div class="card">
       <div class="card-title">Pipeline Progress</div>
       <div style="margin-bottom:14px;">
@@ -353,10 +374,10 @@ select option{background:var(--surface);}
         <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
       </div>
       <div class="stages">
-        <div class="stage pending" id="st-packmol">  <div class="stage-ico">📦</div><div class="stage-info"><div class="stage-name">Packmol</div><div class="stage-desc">Pack molecules into simulation box → packed.pdb</div></div><div class="stage-stat">Pending</div></div>
-        <div class="stage pending" id="st-moltemplate"><div class="stage-ico">🔧</div><div class="stage-info"><div class="stage-name">Moltemplate</div><div class="stage-desc">Scan dependencies, generate LAMMPS topology</div></div><div class="stage-stat">Pending</div></div>
-        <div class="stage pending" id="st-lammps">   <div class="stage-ico">⚡</div><div class="stage-info"><div class="stage-name">LAMMPS MD Run</div><div class="stage-desc">Execute molecular dynamics simulation</div></div><div class="stage-stat">Pending</div></div>
-        <div class="stage pending" id="st-post">     <div class="stage-ico">📊</div><div class="stage-info"><div class="stage-name">Package Results</div><div class="stage-desc">Zip all output files for download</div></div><div class="stage-stat">Pending</div></div>
+        <div class="stage pending" id="st-packmol"><div class="stage-ico">📦</div><div class="stage-info"><div class="stage-name">Packmol</div><div class="stage-desc">Pack molecules into simulation box</div></div><div class="stage-stat">Pending</div></div>
+        <div class="stage pending" id="st-moltemplate"><div class="stage-ico">🔧</div><div class="stage-info"><div class="stage-name">Moltemplate</div><div class="stage-desc">Scan dependencies, generate topology</div></div><div class="stage-stat">Pending</div></div>
+        <div class="stage pending" id="st-lammps"><div class="stage-ico">⚡</div><div class="stage-info"><div class="stage-name">LAMMPS MD Run</div><div class="stage-desc" id="lammps-ens-desc">Execute molecular dynamics simulation</div></div><div class="stage-stat">Pending</div></div>
+        <div class="stage pending" id="st-post"><div class="stage-ico">📊</div><div class="stage-info"><div class="stage-name">Package Results</div><div class="stage-desc">Zip all output files for download</div></div><div class="stage-stat">Pending</div></div>
       </div>
     </div>
     <div class="card">
@@ -367,24 +388,22 @@ select option{background:var(--surface);}
           <span style="margin-left:8px">pipeline.log</span>
           <span style="margin-left:auto" id="log-live">● connecting</span>
         </div>
-        <div class="term-body" id="log-body">
-          <div class="l-info">// Waiting for pipeline to start...</div>
-        </div>
+        <div class="term-body" id="log-body"><div class="l-info">// Waiting for pipeline to start...</div></div>
       </div>
     </div>
   </div>
 
-  <!-- Sub 4: Results -->
-  <div class="sub" id="sub4">
+  <!-- STEP 5 — Results -->
+  <div class="sub" id="sub5">
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="r-mols">—</div><div class="stat-lbl">Molecules</div></div>
-      <div class="stat-box"><div class="stat-val" id="r-types">—</div><div class="stat-lbl">Types</div></div>
+      <div class="stat-box"><div class="stat-val" id="r-ens">—</div><div class="stat-lbl">Ensemble</div></div>
       <div class="stat-box"><div class="stat-val" id="r-job">—</div><div class="stat-lbl">Job ID</div></div>
-      <div class="stat-box"><div class="stat-val" id="r-status">—</div><div class="stat-lbl">Status</div></div>
+      <div class="stat-box"><div class="stat-val" id="r-status">✓</div><div class="stat-lbl">Status</div></div>
     </div>
     <div class="res-grid">
       <div class="res-card"><div class="res-icon">💾</div><div class="res-name">system.data</div><div class="res-desc">LAMMPS data file — atoms, bonds, angles</div><button class="btn-dl" onclick="dl('system.data')">⬇ Download</button></div>
-      <div class="res-card"><div class="res-icon">📐</div><div class="res-name">run.in</div><div class="res-desc">LAMMPS run script (your template, filled in)</div><button class="btn-dl" onclick="dl('run.in')">⬇ Download</button></div>
+      <div class="res-card"><div class="res-icon">📐</div><div class="res-name">run.in</div><div class="res-desc">Auto-generated LAMMPS run script</div><button class="btn-dl" onclick="dl('run.in')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">🎞️</div><div class="res-name">traj.lammpstrj</div><div class="res-desc">Trajectory — open in VMD or OVITO</div><button class="btn-dl" onclick="dl('traj.lammpstrj')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📈</div><div class="res-name">log.lammps</div><div class="res-desc">Thermodynamic log — energy, temp, pressure</div><button class="btn-dl" onclick="dl('log.lammps')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📦</div><div class="res-name">packed.pdb</div><div class="res-desc">Initial configuration from Packmol</div><button class="btn-dl" onclick="dl('packed.pdb')">⬇ Download</button></div>
@@ -398,98 +417,53 @@ select option{background:var(--surface);}
 
 </div><!-- /tab-run -->
 
-<!-- ═══════════════════════ TAB: BANK ═══════════════════════ -->
+<!-- ═══════════════ TAB: BANK ═══════════════ -->
 <div class="tab-panel" id="tab-bank">
-
   <div class="card">
     <div class="card-title">Molecule Library <span id="bank-count" style="color:var(--muted);font-weight:400;font-size:10px;"></span></div>
-    <div class="alert alert-info">
-      ✅ Molecules marked <strong style="color:var(--accent)">ready</strong> have both .pdb and .lt files and can be used in simulations. Upload the missing file to complete any molecule.
-    </div>
-    <div class="bank-grid" id="bank-grid">
-      <div style="color:var(--muted);font-size:11px;grid-column:1/-1">Loading...</div>
-    </div>
+    <div class="alert alert-info">✅ Molecules marked <strong style="color:var(--accent)">ready</strong> have both .pdb and .lt and can be used in simulations.</div>
+    <div class="bank-grid" id="bank-grid"><div style="color:var(--muted);font-size:11px;grid-column:1/-1">Loading...</div></div>
   </div>
-
   <div class="card">
     <div class="card-title">Add New Molecule</div>
-    <div class="field">
-      <label>Molecule Name</label>
-      <input type="text" id="bank-name" placeholder="e.g. ethanol, toluene (lowercase)">
-    </div>
+    <div class="field"><label>Molecule Name</label>
+      <input type="text" id="bank-name" placeholder="e.g. ethanol, toluene (lowercase)"></div>
     <div class="row2">
-      <div class="field" style="margin:0">
-        <label>PDB File</label>
-        <div class="upload-zone">
-          <input type="file" accept=".pdb" id="bank-pdb" onchange="markUpload(this,'bank-pdb-status')">
-          <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb</div>
-        </div>
-        <div id="bank-pdb-status"></div>
-      </div>
-      <div class="field" style="margin:0">
-        <label>LT File</label>
-        <div class="upload-zone">
-          <input type="file" accept=".lt" id="bank-lt" onchange="markUpload(this,'bank-lt-status')">
-          <div class="upload-zone-lbl"><strong>Click</strong> to upload .lt</div>
-        </div>
-        <div id="bank-lt-status"></div>
-      </div>
+      <div class="field" style="margin:0"><label>PDB File</label>
+        <div class="upload-zone"><input type="file" accept=".pdb" id="bank-pdb" onchange="markUpload(this,'bank-pdb-status')">
+        <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb</div></div>
+        <div id="bank-pdb-status"></div></div>
+      <div class="field" style="margin:0"><label>LT File</label>
+        <div class="upload-zone"><input type="file" accept=".lt" id="bank-lt" onchange="markUpload(this,'bank-lt-status')">
+        <div class="upload-zone-lbl"><strong>Click</strong> to upload .lt</div></div>
+        <div id="bank-lt-status"></div></div>
     </div>
     <div style="margin-top:14px;">
       <button class="btn btn-primary" id="bank-add-btn" onclick="bankAdd()">+ Add to Bank</button>
     </div>
   </div>
-
-</div><!-- /tab-bank -->
+</div>
 
 </div><!-- /app -->
 <script>
-// ═══════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════
 const API_BASE = "https://Madhavi3-molsim-backend.hf.space";
 
-// ═══════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════
-let selectedMols = [];   // [{name, count}]
-let allMolecules = [];   // from /api/molecules
+let selectedMols = [];
+let allMolecules = [];
 let jobId        = null;
 let pollTimer    = null;
 let logIdx       = 0;
+let ensemble     = "NVT";
 
-const DEFAULT_TMPL = `# MolSim auto-generated LAMMPS script — \${SYSTEM_NAME}
-include         system.in.init
-read_data       system.data
-include         system.in.settings
-
-neighbor        2.0 bin
-neigh_modify    every 1 delay 0 check yes
-timestep        1.0
-
-thermo          1000
-thermo_style    custom step temp press pe ke etotal density
-
-fix             1 all nvt temp 300.0 300.0 100.0
-
-dump            1 all atom 1000 traj.lammpstrj
-dump_modify     1 sort id
-
-run             100000
-write_data      final_\${SYSTEM_NAME}.data`;
-
-// ═══════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════
+// ── Init ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   document.getElementById('conn-url').textContent = API_BASE;
   checkHealth();
   loadMolecules();
+  updateEnsembleParams();
 });
 
-// ═══════════════════════════════════════════════════
-// NAVIGATION
-// ═══════════════════════════════════════════════════
+// ── Tabs ──────────────────────────────────────────────────────
 function switchTab(btn, id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -498,8 +472,10 @@ function switchTab(btn, id) {
   if (id === 'tab-bank') renderBank();
 }
 
+// ── Stepper ───────────────────────────────────────────────────
 function goStep(n) {
-  for (let i = 1; i <= 4; i++) {
+  if (n === 2 && !selectedMols.length) { alert('Add at least one molecule first.'); return; }
+  for (let i = 1; i <= 5; i++) {
     document.getElementById(`sub${i}`).classList.toggle('active', i === n);
     const s = document.getElementById(`s${i}`);
     s.classList.remove('active','done');
@@ -509,9 +485,7 @@ function goStep(n) {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// ═══════════════════════════════════════════════════
-// HEALTH
-// ═══════════════════════════════════════════════════
+// ── Health ────────────────────────────────────────────────────
 async function checkHealth() {
   const b = document.getElementById('conn-badge');
   try {
@@ -528,60 +502,40 @@ async function checkHealth() {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// MOLECULES
-// ═══════════════════════════════════════════════════
+// ── Molecules ─────────────────────────────────────────────────
 async function loadMolecules() {
   try {
     const r = await fetch(`${API_BASE}/api/molecules`);
     const d = await r.json();
     allMolecules = d.molecules || [];
-    populateDropdown();
-    renderBank();
-  } catch(e) {
-    console.error(e);
-  }
+    populateDropdown(); renderBank();
+  } catch(e) { console.error(e); }
 }
-
 function populateDropdown() {
   const sel = document.getElementById('mol-select');
   const ready = allMolecules.filter(m => m.ready);
-  if (!ready.length) {
-    sel.innerHTML = '<option value="">No ready molecules — add via Molecule Bank</option>';
-    return;
-  }
-  sel.innerHTML = '<option value="">-- select molecule --</option>' +
-    ready.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+  sel.innerHTML = ready.length
+    ? '<option value="">-- select molecule --</option>' + ready.map(m => `<option value="${m.name}">${m.name}</option>`).join('')
+    : '<option value="">No ready molecules — add via Molecule Bank</option>';
 }
-
 function addMol() {
-  const sel   = document.getElementById('mol-select');
+  const sel = document.getElementById('mol-select');
   const count = parseInt(document.getElementById('mol-count').value) || 100;
   const name  = sel.value;
   if (!name) return;
-
-  // If already added, just update count
   const existing = selectedMols.find(m => m.name === name);
-  if (existing) { existing.count = count; }
-  else           { selectedMols.push({name, count}); }
-
-  renderMolList();
-  sel.value = '';
+  if (existing) existing.count = count;
+  else selectedMols.push({name, count});
+  renderMolList(); sel.value = '';
 }
-
 function removeMol(name) {
   selectedMols = selectedMols.filter(m => m.name !== name);
   renderMolList();
 }
-
 function renderMolList() {
   const c = document.getElementById('mol-list');
   const e = document.getElementById('mol-empty');
-  if (!selectedMols.length) {
-    c.innerHTML = '';
-    e.style.display = 'block';
-    return;
-  }
+  if (!selectedMols.length) { c.innerHTML = ''; e.style.display = 'block'; return; }
   e.style.display = 'none';
   c.innerHTML = selectedMols.map(m => `
     <div class="mol-row">
@@ -592,47 +546,76 @@ function renderMolList() {
     </div>`).join('');
 }
 
-// ═══════════════════════════════════════════════════
-// TEMPLATE
-// ═══════════════════════════════════════════════════
-function loadDefault() {
-  document.getElementById('lammps-tmpl').value = DEFAULT_TMPL;
+// ── Ensemble ──────────────────────────────────────────────────
+function selectEnsemble(ens) {
+  ensemble = ens;
+  ['NVT','NPT','NVE'].forEach(e => {
+    document.getElementById(`ens-${e}`).classList.toggle('selected', e === ens);
+    document.getElementById(`info-${e}`).style.display = e === ens ? 'flex' : 'none';
+  });
+  updateEnsembleParams();
 }
 
-// ═══════════════════════════════════════════════════
-// LAUNCH
-// ═══════════════════════════════════════════════════
-async function launch() {
-  if (!selectedMols.length) return alert('Add at least one molecule first.');
+function updateEnsembleParams() {
+  const showTemp  = (ensemble === 'NVT' || ensemble === 'NPT');
+  const showPress = (ensemble === 'NPT');
+  document.getElementById('sec-temp').style.display  = showTemp  ? 'block' : 'none';
+  document.getElementById('sec-press').style.display = showPress ? 'block' : 'none';
+  document.getElementById('ens-badge').textContent   = ensemble;
+  const ensDesc = {
+    NVT: 'NVT — Nosé-Hoover thermostat, fixed volume',
+    NPT: 'NPT — thermostat + barostat, variable volume',
+    NVE: 'NVE — microcanonical, no thermostat',
+  };
+  const el = document.getElementById('lammps-ens-desc');
+  if (el) el.textContent = ensDesc[ensemble];
+}
 
-  goStep(3);
+// ── Launch ────────────────────────────────────────────────────
+async function launch() {
+  goStep(4);
   logIdx = 0;
   document.getElementById('log-body').innerHTML = '';
   setProgress(0);
   ['st-packmol','st-moltemplate','st-lammps','st-post'].forEach(id => setStage(id,'pending','Pending'));
-  addLog('Starting pipeline...','step');
 
-  const config = {
-    molecules: selectedMols,
-    box: {
-      x:         parseFloat(document.getElementById('box-x').value)    || 50,
-      y:         parseFloat(document.getElementById('box-y').value)    || 50,
-      z:         parseFloat(document.getElementById('box-z').value)    || 50,
-      tolerance: parseFloat(document.getElementById('pack-tol').value) || 2.0,
-    },
-    lammps_template: document.getElementById('lammps-tmpl').value.trim(),
+  const sc = {
+    ensemble,
+    box_x:       parseFloat(document.getElementById('box-x').value)      || 50,
+    box_y:       parseFloat(document.getElementById('box-y').value)      || 50,
+    box_z:       parseFloat(document.getElementById('box-z').value)      || 50,
+    timestep:    parseFloat(document.getElementById('timestep').value)   || 1.0,
+    run_steps:   parseInt  (document.getElementById('run-steps').value)  || 100000,
+    thermo_freq: parseInt  (document.getElementById('thermo-freq').value)|| 1000,
+    dump_freq:   parseInt  (document.getElementById('dump-freq').value)  || 1000,
   };
+  if (ensemble !== 'NVE') {
+    sc.temp_start = parseFloat(document.getElementById('temp-start').value) || 300;
+    sc.temp_end   = parseFloat(document.getElementById('temp-end').value)   || 300;
+  }
+  if (ensemble === 'NPT') {
+    sc.press_start = parseFloat(document.getElementById('press-start').value) || 1.0;
+    sc.press_end   = parseFloat(document.getElementById('press-end').value)   || 1.0;
+  }
 
-  addLog(`Molecules: ${selectedMols.map(m=>`${m.name}×${m.count}`).join(', ')}`);
-  addLog(`Box: ${config.box.x}×${config.box.y}×${config.box.z} Å`);
+  addLog(`Ensemble : ${ensemble}`, 'step');
+  addLog(`Box      : ${sc.box_x} × ${sc.box_y} × ${sc.box_z} Å`);
+  if (sc.temp_start !== undefined)  addLog(`Temp     : ${sc.temp_start} → ${sc.temp_end} K`);
+  if (sc.press_start !== undefined) addLog(`Pressure : ${sc.press_start} → ${sc.press_end} atm`);
+  addLog(`Steps    : ${sc.run_steps} | Timestep: ${sc.timestep} fs`);
 
   try {
     const r = await fetch(`${API_BASE}/api/run`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(config),
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        molecules:  selectedMols,
+        box:        {x: sc.box_x, y: sc.box_y, z: sc.box_z, tolerance: 2.0},
+        sim_config: sc,
+      }),
     });
     const d = await r.json();
-    if (!d.job_id) throw new Error(d.detail || 'No job_id');
+    if (!d.job_id) throw new Error(d.detail || 'No job_id returned');
     jobId = d.job_id;
     addLog(`✓ Job started — ID: ${jobId}`, 'success');
     document.getElementById('log-live').textContent = '● live';
@@ -640,29 +623,23 @@ async function launch() {
     startPolling(jobId);
   } catch(e) {
     addLog(`Failed to start: ${e.message}`, 'error');
-    document.getElementById('log-live').textContent = '✗ error';
   }
 }
 
-// ═══════════════════════════════════════════════════
-// POLLING
-// ═══════════════════════════════════════════════════
+// ── Polling ───────────────────────────────────────────────────
 function startPolling(jid) {
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     try {
       const r = await fetch(`${API_BASE}/api/status/${jid}?since_log=${logIdx}`);
       const d = await r.json();
-
       for (const line of (d.log||[])) { addLog(line.msg, line.level||'info'); logIdx++; }
       setProgress(d.progress || 0);
       updateStages(d.stage, d.status);
-
       if (d.status === 'done') {
         clearInterval(pollTimer);
         document.getElementById('log-live').textContent = '✓ complete';
-        showResults(d);
-        setTimeout(() => goStep(4), 800);
+        showResults(); setTimeout(() => goStep(5), 800);
       } else if (d.status === 'error') {
         clearInterval(pollTimer);
         document.getElementById('log-live').textContent = '✗ error';
@@ -672,76 +649,54 @@ function startPolling(jid) {
     } catch(e) { addLog(`Polling error: ${e.message}`, 'warn'); }
   }, 2000);
 }
-
 function updateStages(stage, status) {
-  const map = {packmol:'st-packmol', moltemplate:'st-moltemplate', lammps:'st-lammps', post:'st-post'};
+  const map   = {packmol:'st-packmol',moltemplate:'st-moltemplate',lammps:'st-lammps',post:'st-post'};
   const order = ['packmol','moltemplate','lammps','post'];
-  const idx = order.indexOf(stage);
-  order.forEach((s, i) => {
-    if (i < idx) setStage(map[s], 'done', '✓ Done');
-    else if (s === stage)
-      setStage(map[s], status==='error'?'error':'running', status==='error'?'✗ Error':'● Running');
+  const idx   = order.indexOf(stage);
+  order.forEach((s,i) => {
+    if (i < idx) setStage(map[s],'done','✓ Done');
+    else if (s === stage) setStage(map[s], status==='error'?'error':'running', status==='error'?'✗ Error':'● Running');
   });
 }
-
-function showResults(d) {
-  const total = selectedMols.reduce((a,m) => a+m.count, 0);
-  document.getElementById('r-mols').textContent   = total.toLocaleString();
-  document.getElementById('r-types').textContent  = selectedMols.length;
+function showResults() {
+  document.getElementById('r-mols').textContent   = selectedMols.reduce((a,m)=>a+m.count,0).toLocaleString();
+  document.getElementById('r-ens').textContent    = ensemble;
   document.getElementById('r-job').textContent    = jobId;
-  document.getElementById('r-status').textContent = '✓ Done';
+  document.getElementById('r-status').textContent = '✓';
 }
-
-// ═══════════════════════════════════════════════════
-// DOWNLOAD
-// ═══════════════════════════════════════════════════
 function dl(fname) {
   if (!jobId) return alert('No completed job.');
   window.open(`${API_BASE}/api/download/${jobId}/${fname}`, '_blank');
 }
-
-// ═══════════════════════════════════════════════════
-// UI HELPERS
-// ═══════════════════════════════════════════════════
 function addLog(msg, level='info') {
-  const b  = document.getElementById('log-body');
+  const b = document.getElementById('log-body');
   const ts = new Date().toLocaleTimeString('en',{hour12:false});
   b.innerHTML += `<div class="l-${level}">[${ts}] ${msg}</div>`;
   b.scrollTop = b.scrollHeight;
 }
-
 function setProgress(pct) {
   document.getElementById('prog-bar').style.width = pct+'%';
-  document.getElementById('prog-pct').textContent  = pct+'%';
+  document.getElementById('prog-pct').textContent = pct+'%';
 }
-
 function setStage(id, state, label) {
   const el = document.getElementById(id);
   if (!el) return;
   el.className = `stage ${state}`;
   el.querySelector('.stage-stat').textContent = label;
 }
-
 function reset() {
-  selectedMols = []; jobId = null; logIdx = 0;
+  selectedMols=[]; jobId=null; logIdx=0; ensemble='NVT';
   if (pollTimer) clearInterval(pollTimer);
-  renderMolList();
-  goStep(1);
+  renderMolList(); selectEnsemble('NVT'); goStep(1);
 }
 
-// ═══════════════════════════════════════════════════
-// MOLECULE BANK TAB
-// ═══════════════════════════════════════════════════
+// ── Bank ──────────────────────────────────────────────────────
 function renderBank() {
   const grid = document.getElementById('bank-grid');
   document.getElementById('bank-count').textContent =
     `(${allMolecules.length} total · ${allMolecules.filter(m=>m.ready).length} ready)`;
-
-  if (!allMolecules.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:11px;grid-column:1/-1">No molecules found.</div>';
-    return;
-  }
-  grid.innerHTML = allMolecules.map(m => `
+  if (!allMolecules.length) { grid.innerHTML='<div style="color:var(--muted);font-size:11px;grid-column:1/-1">No molecules found.</div>'; return; }
+  grid.innerHTML = allMolecules.map(m=>`
     <div class="mol-card ${m.ready?'ready':''}">
       <div class="mol-card-name">${m.name}</div>
       <div class="mol-card-tags">
@@ -751,54 +706,41 @@ function renderBank() {
       <button class="mol-card-del" onclick="bankDel('${m.name}')">🗑 Delete</button>
     </div>`).join('');
 }
-
 function markUpload(input, statusId) {
   const f = input.files[0];
   if (!f) return;
-  document.getElementById(statusId).innerHTML =
-    `<div class="uploaded-ok">✓ ${f.name}</div>`;
+  document.getElementById(statusId).innerHTML = `<div class="uploaded-ok">✓ ${f.name}</div>`;
 }
-
 async function bankAdd() {
   const name = document.getElementById('bank-name').value.trim().toLowerCase();
   const pdb  = document.getElementById('bank-pdb').files[0];
   const lt   = document.getElementById('bank-lt').files[0];
-  if (!name)       return alert('Enter a molecule name.');
-  if (!pdb && !lt) return alert('Upload at least one file (pdb or lt).');
-
+  if (!name) return alert('Enter a molecule name.');
+  if (!pdb && !lt) return alert('Upload at least one file.');
   const btn = document.getElementById('bank-add-btn');
-  btn.innerHTML = '<span class="spinner"></span> Uploading...';
-  btn.disabled  = true;
-
+  btn.innerHTML = '<span class="spinner"></span> Uploading...'; btn.disabled = true;
   const form = new FormData();
   form.append('name', name);
   if (pdb) form.append('pdb_file', pdb, pdb.name);
   if (lt)  form.append('lt_file',  lt,  lt.name);
-
   try {
-    const r = await fetch(`${API_BASE}/api/molecules/upload`, {method:'POST', body:form});
+    const r = await fetch(`${API_BASE}/api/molecules/upload`,{method:'POST',body:form});
     const d = await r.json();
     if (d.name) {
-      document.getElementById('bank-name').value = '';
-      document.getElementById('bank-pdb').value  = '';
-      document.getElementById('bank-lt').value   = '';
-      document.getElementById('bank-pdb-status').innerHTML = '';
-      document.getElementById('bank-lt-status').innerHTML  = '';
+      document.getElementById('bank-name').value='';
+      document.getElementById('bank-pdb').value='';
+      document.getElementById('bank-lt').value='';
+      document.getElementById('bank-pdb-status').innerHTML='';
+      document.getElementById('bank-lt-status').innerHTML='';
       await loadMolecules();
-    } else { alert('Upload failed: ' + JSON.stringify(d)); }
-  } catch(e) { alert('Error: ' + e.message); }
-  finally {
-    btn.innerHTML = '+ Add to Bank';
-    btn.disabled  = false;
-  }
+    } else alert('Upload failed: '+JSON.stringify(d));
+  } catch(e) { alert('Error: '+e.message); }
+  finally { btn.innerHTML='+ Add to Bank'; btn.disabled=false; }
 }
-
 async function bankDel(name) {
-  if (!confirm(`Delete "${name}" from the bank?`)) return;
-  try {
-    await fetch(`${API_BASE}/api/molecules/${name}`, {method:'DELETE'});
-    await loadMolecules();
-  } catch(e) { alert('Delete failed: ' + e.message); }
+  if (!confirm(`Delete "${name}"?`)) return;
+  try { await fetch(`${API_BASE}/api/molecules/${name}`,{method:'DELETE'}); await loadMolecules(); }
+  catch(e) { alert('Delete failed: '+e.message); }
 }
 </script>
 </body>
