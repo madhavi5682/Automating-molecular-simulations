@@ -65,6 +65,7 @@ select option{background:var(--surface);}
 .row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
 @media(max-width:640px){.row2,.row3,.row4{grid-template-columns:1fr 1fr;}}
 
+/* Ensemble cards */
 .ensemble-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px;}
 @media(max-width:600px){.ensemble-grid{grid-template-columns:1fr;}}
 .ens-card{border:1px solid var(--border);border-radius:10px;padding:18px 14px;cursor:pointer;
@@ -78,6 +79,7 @@ select option{background:var(--surface);}
 .ens-card.selected .ens-name{color:var(--accent);}
 .ens-card.selected .ens-desc{color:rgba(230,237,243,0.7);}
 
+/* Param sections */
 .param-sec{border:1px solid var(--border);border-radius:8px;padding:18px;
   margin-bottom:14px;background:var(--surface);animation:fadeUp 0.2s ease;}
 .param-sec-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
@@ -138,8 +140,8 @@ select option{background:var(--surface);}
 .stage-stat{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;}
 .stage.pending .stage-stat{color:var(--muted);background:rgba(100,116,139,0.1);}
 .stage.running .stage-stat{color:var(--accent);background:rgba(0,255,157,0.1);animation:blink 1.4s infinite;}
-.stage.done .stage-stat{color:#60a5fa;background:rgba(0,102,255,0.1);}
-.stage.error .stage-stat{color:var(--orange);background:rgba(255,107,53,0.1);}
+.stage.done    .stage-stat{color:#60a5fa;background:rgba(0,102,255,0.1);}
+.stage.error   .stage-stat{color:var(--orange);background:rgba(255,107,53,0.1);}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
 
 .prog-wrap{background:var(--surface);border-radius:100px;height:4px;margin-bottom:4px;overflow:hidden;}
@@ -150,12 +152,8 @@ select option{background:var(--surface);}
   padding:8px 14px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
 .term-body{padding:14px;font-size:11px;line-height:1.9;max-height:260px;overflow-y:auto;
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.l-info{color:#4a5568;}
-.l-success{color:var(--accent);}
-.l-cmd{color:#60a5fa;}
-.l-warn{color:#f59e0b;}
-.l-error{color:var(--orange);}
-.l-step{color:var(--purple);font-weight:700;}
+.l-info{color:#4a5568;}.l-success{color:var(--accent);}.l-cmd{color:#60a5fa;}
+.l-warn{color:#f59e0b;}.l-error{color:var(--orange);}.l-step{color:var(--purple);font-weight:700;}
 
 .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
 @media(max-width:560px){.res-grid{grid-template-columns:1fr;}}
@@ -202,9 +200,7 @@ select option{background:var(--surface);}
   border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .dot{width:8px;height:8px;border-radius:50%;}
-.dot.r{background:#ff5f57;}
-.dot.y{background:#ffbd2e;}
-.dot.g{background:#28ca41;}
+.dot.r{background:#ff5f57;}.dot.y{background:#ffbd2e;}.dot.g{background:#28ca41;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
@@ -240,6 +236,7 @@ select option{background:var(--surface);}
   <button class="tab" onclick="switchTab(this,'tab-bank')">🧬 Molecule Bank</button>
 </div>
 
+<!-- ═══════════════ TAB: RUN ═══════════════ -->
 <div class="tab-panel active" id="tab-run">
 
   <div class="stepper">
@@ -254,6 +251,7 @@ select option{background:var(--surface);}
     <div class="step" id="s5"><div class="step-num">5</div><div class="step-label">Results</div></div>
   </div>
 
+  <!-- STEP 1 — Molecules -->
   <div class="sub active" id="sub1">
     <div class="card">
       <div class="card-title">Select Molecules</div>
@@ -273,10 +271,12 @@ select option{background:var(--surface);}
       <button class="btn btn-primary" onclick="goStep(2)">Next: Choose Ensemble →</button></div>
   </div>
 
+  <!-- STEP 2 — Ensemble -->
   <div class="sub" id="sub2">
     <div class="card">
       <div class="card-title">Choose Ensemble</div>
       <div class="ensemble-grid">
+
         <div class="ens-card selected" id="ens-NVT" onclick="selectEnsemble('NVT')">
           <div class="ens-icon">🌡️</div>
           <div class="ens-name">NVT</div>
@@ -294,6 +294,7 @@ select option{background:var(--surface);}
           <div class="ens-name">NVE</div>
           <div class="ens-desc">Constant Volume + Energy<br>No thermostat/barostat<br><br>Set: box size only</div>
         </div>
+
       </div>
 
       <div id="info-NVT" class="alert alert-info">🌡️ <b>NVT</b> — Temperature is controlled, volume is fixed. You will set start/end temperature and box dimensions.</div>
@@ -306,6 +307,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
+  <!-- STEP 3 — Parameters -->
   <div class="sub" id="sub3">
     <div class="card">
       <div class="card-title">Simulation Parameters
@@ -313,6 +315,7 @@ select option{background:var(--surface);}
           background:rgba(0,255,157,0.12);color:var(--accent);font-weight:700;"></span>
       </div>
 
+      <!-- Box — always shown -->
       <div class="param-sec">
         <div class="param-sec-title">📦 Simulation Box <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
         <div class="row3">
@@ -322,8 +325,9 @@ select option{background:var(--surface);}
         </div>
       </div>
 
+      <!-- Temperature — NVT + NPT -->
       <div class="param-sec" id="sec-temp">
-        <div class="param-sec-title">🌡️ Temperature <span class="ptag ptag-nvt">NVT / NPT</span></div>
+        <div class="param-sec-title">🌡️ Temperature <span class="ptag ptag-nvt" id="temp-tag">NVT / NPT</span></div>
         <div class="row2">
           <div class="field" style="margin:0"><label>Start Temperature (K)</label><input type="number" id="temp-start" value="300" min="1"></div>
           <div class="field" style="margin:0"><label>End Temperature (K)</label><input type="number" id="temp-end" value="300" min="1"></div>
@@ -331,6 +335,7 @@ select option{background:var(--surface);}
         <div style="font-size:10px;color:var(--muted);margin-top:8px;">Set both to the same value for constant temperature. Use different values for a temperature ramp.</div>
       </div>
 
+      <!-- Pressure — NPT only -->
       <div class="param-sec" id="sec-press" style="display:none">
         <div class="param-sec-title">🔩 Pressure <span class="ptag ptag-npt">NPT ONLY</span></div>
         <div class="row2">
@@ -339,6 +344,7 @@ select option{background:var(--surface);}
         </div>
       </div>
 
+      <!-- Run params — always shown -->
       <div class="param-sec">
         <div class="param-sec-title">⏱️ Run Parameters <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
         <div class="row4">
@@ -348,14 +354,15 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>Dump Freq</label><input type="number" id="dump-freq" value="1000" min="1"></div>
         </div>
       </div>
-    </div>
 
+    </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
       <button class="btn btn-primary btn-lg" onclick="launch()">⚡ Launch Simulation →</button>
     </div>
   </div>
 
+  <!-- STEP 4 — Running -->
   <div class="sub" id="sub4">
     <div class="card">
       <div class="card-title">Pipeline Progress</div>
@@ -373,7 +380,6 @@ select option{background:var(--surface);}
         <div class="stage pending" id="st-post"><div class="stage-ico">📊</div><div class="stage-info"><div class="stage-name">Package Results</div><div class="stage-desc">Zip all output files for download</div></div><div class="stage-stat">Pending</div></div>
       </div>
     </div>
-
     <div class="card">
       <div class="card-title">Live Log</div>
       <div class="terminal">
@@ -387,6 +393,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
+  <!-- STEP 5 — Results -->
   <div class="sub" id="sub5">
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="r-mols">—</div><div class="stat-lbl">Molecules</div></div>
@@ -394,7 +401,6 @@ select option{background:var(--surface);}
       <div class="stat-box"><div class="stat-val" id="r-job">—</div><div class="stat-lbl">Job ID</div></div>
       <div class="stat-box"><div class="stat-val" id="r-status">✓</div><div class="stat-lbl">Status</div></div>
     </div>
-
     <div class="res-grid">
       <div class="res-card"><div class="res-icon">💾</div><div class="res-name">system.data</div><div class="res-desc">LAMMPS data file — atoms, bonds, angles</div><button class="btn-dl" onclick="dl('system.data')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📐</div><div class="res-name">run.in</div><div class="res-desc">Auto-generated LAMMPS run script</div><button class="btn-dl" onclick="dl('run.in')">⬇ Download</button></div>
@@ -403,24 +409,25 @@ select option{background:var(--surface);}
       <div class="res-card"><div class="res-icon">📦</div><div class="res-name">packed.pdb</div><div class="res-desc">Initial configuration from Packmol</div><button class="btn-dl" onclick="dl('packed.pdb')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">🗂️</div><div class="res-name">results.zip</div><div class="res-desc">All output files bundled together</div><button class="btn-dl" onclick="dl('results.zip')">⬇ Download All</button></div>
     </div>
-
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="reset()">🔄 New Simulation</button>
       <button class="btn btn-success" onclick="dl('results.zip')">⬇ Download All</button>
     </div>
   </div>
-</div>
 
+</div><!-- /tab-run -->
+
+<!-- ═══════════════ TAB: BANK ═══════════════ -->
 <div class="tab-panel" id="tab-bank">
   <div class="card">
     <div class="card-title">Molecule Library <span id="bank-count" style="color:var(--muted);font-weight:400;font-size:10px;"></span></div>
     <div class="alert alert-info">✅ Molecules marked <strong style="color:var(--accent)">ready</strong> have both .pdb and .lt and can be used in simulations.</div>
     <div class="bank-grid" id="bank-grid"><div style="color:var(--muted);font-size:11px;grid-column:1/-1">Loading...</div></div>
   </div>
-
   <div class="card">
     <div class="card-title">Add New Molecule</div>
 
+    <!-- Toggle between two methods -->
     <div style="display:flex;gap:8px;margin-bottom:18px;">
       <button id="method-btn-ligpargen" onclick="setMethod('ligpargen')"
         style="flex:1;padding:9px;border-radius:6px;font-family:var(--mono);font-size:11px;
@@ -436,6 +443,7 @@ select option{background:var(--surface);}
       </button>
     </div>
 
+    <!-- METHOD 1: LigParGen -->
     <div id="method-ligpargen">
       <div class="alert alert-info">
         🧪 Download from <strong>LigParGen</strong> → click <strong>LAMMPS</strong> button (gives .data file) and <strong>PDB</strong> button. The server will convert .data → .lt automatically using ltemplify.
@@ -459,6 +467,7 @@ select option{background:var(--surface);}
       </div>
     </div>
 
+    <!-- METHOD 2: Manual -->
     <div id="method-manual" style="display:none">
       <div class="alert alert-info">
         📁 Upload .lt and .pdb files directly if you already have them.
@@ -479,21 +488,22 @@ select option{background:var(--surface);}
         <button class="btn btn-primary" id="bank-add-btn" onclick="bankAdd()">+ Add to Bank</button>
       </div>
     </div>
+
   </div>
 </div>
 
-</div>
-
+</div><!-- /app -->
 <script>
 const API_BASE = "https://Madhavi3-molsim-backend.hf.space";
 
 let selectedMols = [];
 let allMolecules = [];
-let jobId = null;
-let pollTimer = null;
-let logIdx = 0;
-let ensemble = "NVT";
+let jobId        = null;
+let pollTimer    = null;
+let logIdx       = 0;
+let ensemble     = "NVT";
 
+// ── Init ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   document.getElementById('conn-url').textContent = API_BASE;
   checkHealth();
@@ -501,28 +511,7 @@ window.addEventListener('load', () => {
   updateEnsembleParams();
 });
 
-async function apiFetch(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, options);
-  const contentType = response.headers.get('content-type') || '';
-  let data;
-
-  if (contentType.includes('application/json')) {
-    data = await response.json();
-  } else {
-    data = await response.text();
-  }
-
-  if (!response.ok) {
-    const msg =
-      typeof data === 'string'
-        ? data
-        : data.detail || data.message || JSON.stringify(data);
-    throw new Error(msg);
-  }
-
-  return data;
-}
-
+// ── Tabs ──────────────────────────────────────────────────────
 function switchTab(btn, id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -531,111 +520,84 @@ function switchTab(btn, id) {
   if (id === 'tab-bank') renderBank();
 }
 
+// ── Stepper ───────────────────────────────────────────────────
 function goStep(n) {
-  if (n === 2 && !selectedMols.length) {
-    alert('Add at least one molecule first.');
-    return;
-  }
+  if (n === 2 && !selectedMols.length) { alert('Add at least one molecule first.'); return; }
   for (let i = 1; i <= 5; i++) {
     document.getElementById(`sub${i}`).classList.toggle('active', i === n);
     const s = document.getElementById(`s${i}`);
-    s.classList.remove('active', 'done');
+    s.classList.remove('active','done');
     if (i < n) s.classList.add('done');
     else if (i === n) s.classList.add('active');
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
+// ── Health ────────────────────────────────────────────────────
 async function checkHealth() {
   const b = document.getElementById('conn-badge');
   try {
-    const d = await apiFetch('/api/health');
+    const r = await fetch(`${API_BASE}/api/health`, {signal: AbortSignal.timeout(10000)});
+    const d = await r.json();
     const ok = d.moltemplate && d.packmol && d.lammps;
-    b.textContent = ok
-      ? `⬤ Connected (${d.lt_files} lt · ${d.pdb_files} pdb)`
-      : '⚠ Tools missing';
+    b.textContent = ok ? `⬤ Connected  (${d.lt_files} lt · ${d.pdb_files} pdb)` : '⚠ Tools missing';
     b.style.color = ok ? 'var(--accent)' : '#f59e0b';
     b.style.borderColor = ok ? 'rgba(0,255,157,0.4)' : 'rgba(245,158,11,0.4)';
-  } catch (e) {
+  } catch {
     b.textContent = '⬤ Offline';
     b.style.color = 'var(--orange)';
     b.style.borderColor = 'rgba(255,107,53,0.4)';
-    console.error('Health check failed:', e);
   }
 }
 
+// ── Molecules ─────────────────────────────────────────────────
 async function loadMolecules() {
   try {
-    const d = await apiFetch('/api/molecules');
+    const r = await fetch(`${API_BASE}/api/molecules`);
+    const d = await r.json();
     allMolecules = d.molecules || [];
-    populateDropdown();
-    renderBank();
-  } catch (e) {
-    console.error('Failed to load molecules:', e);
-    const sel = document.getElementById('mol-select');
-    if (sel) {
-      sel.innerHTML = '<option value="">Failed to load molecules</option>';
-    }
-  }
+    populateDropdown(); renderBank();
+  } catch(e) { console.error(e); }
 }
-
 function populateDropdown() {
   const sel = document.getElementById('mol-select');
   const ready = allMolecules.filter(m => m.ready);
   sel.innerHTML = ready.length
-    ? '<option value="">-- select molecule --</option>' +
-      ready.map(m => `<option value="${m.name}">${m.name}</option>`).join('')
+    ? '<option value="">-- select molecule --</option>' + ready.map(m => `<option value="${m.name}">${m.name}</option>`).join('')
     : '<option value="">No ready molecules — add via Molecule Bank</option>';
 }
-
 function addMol() {
   const sel = document.getElementById('mol-select');
-  const count = parseInt(document.getElementById('mol-count').value, 10) || 100;
-  const name = sel.value;
+  const count = parseInt(document.getElementById('mol-count').value) || 100;
+  const name  = sel.value;
   if (!name) return;
-
   const existing = selectedMols.find(m => m.name === name);
   if (existing) existing.count = count;
-  else selectedMols.push({ name, count });
-
-  renderMolList();
-  sel.value = '';
+  else selectedMols.push({name, count});
+  renderMolList(); sel.value = '';
 }
-
 function removeMol(name) {
   selectedMols = selectedMols.filter(m => m.name !== name);
   renderMolList();
 }
-
 function renderMolList() {
   const c = document.getElementById('mol-list');
   const e = document.getElementById('mol-empty');
-
-  if (!selectedMols.length) {
-    c.innerHTML = '';
-    e.style.display = 'block';
-    return;
-  }
-
+  if (!selectedMols.length) { c.innerHTML = ''; e.style.display = 'block'; return; }
   e.style.display = 'none';
   c.innerHTML = selectedMols.map(m => `
     <div class="mol-row">
       <div class="mol-name-badge">${m.name}</div>
-      <input
-        class="mol-count-input"
-        type="number"
-        min="1"
-        value="${m.count}"
-        onchange="selectedMols.find(x => x.name === '${m.name}').count = parseInt(this.value, 10) || 1"
-      >
+      <input class="mol-count-input" type="number" min="1" value="${m.count}"
+        onchange="selectedMols.find(x=>x.name==='${m.name}').count=parseInt(this.value)||1">
       <button class="btn-rm" onclick="removeMol('${m.name}')">✕</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
+// ── Ensemble ──────────────────────────────────────────────────
 function selectEnsemble(ens) {
   ensemble = ens;
-  ['NVT', 'NPT', 'NVE'].forEach(e => {
+  ['NVT','NPT','NVE'].forEach(e => {
     document.getElementById(`ens-${e}`).classList.toggle('selected', e === ens);
     document.getElementById(`info-${e}`).style.display = e === ens ? 'flex' : 'none';
   });
@@ -643,330 +605,239 @@ function selectEnsemble(ens) {
 }
 
 function updateEnsembleParams() {
-  const showTemp = ensemble === 'NVT' || ensemble === 'NPT';
-  const showPress = ensemble === 'NPT';
-
-  document.getElementById('sec-temp').style.display = showTemp ? 'block' : 'none';
+  const showTemp  = (ensemble === 'NVT' || ensemble === 'NPT');
+  const showPress = (ensemble === 'NPT');
+  document.getElementById('sec-temp').style.display  = showTemp  ? 'block' : 'none';
   document.getElementById('sec-press').style.display = showPress ? 'block' : 'none';
-  document.getElementById('ens-badge').textContent = ensemble;
-
+  document.getElementById('ens-badge').textContent   = ensemble;
   const ensDesc = {
     NVT: 'NVT — Nosé-Hoover thermostat, fixed volume',
     NPT: 'NPT — thermostat + barostat, variable volume',
-    NVE: 'NVE — microcanonical, no thermostat'
+    NVE: 'NVE — microcanonical, no thermostat',
   };
-
   const el = document.getElementById('lammps-ens-desc');
   if (el) el.textContent = ensDesc[ensemble];
 }
 
+// ── Launch ────────────────────────────────────────────────────
 async function launch() {
   goStep(4);
   logIdx = 0;
   document.getElementById('log-body').innerHTML = '';
   setProgress(0);
-  ['st-packmol', 'st-moltemplate', 'st-lammps', 'st-post'].forEach(id =>
-    setStage(id, 'pending', 'Pending')
-  );
+  ['st-packmol','st-moltemplate','st-lammps','st-post'].forEach(id => setStage(id,'pending','Pending'));
 
   const sc = {
     ensemble,
-    box_x: parseFloat(document.getElementById('box-x').value) || 50,
-    box_y: parseFloat(document.getElementById('box-y').value) || 50,
-    box_z: parseFloat(document.getElementById('box-z').value) || 50,
-    timestep: parseFloat(document.getElementById('timestep').value) || 1.0,
-    run_steps: parseInt(document.getElementById('run-steps').value, 10) || 100000,
-    thermo_freq: parseInt(document.getElementById('thermo-freq').value, 10) || 1000,
-    dump_freq: parseInt(document.getElementById('dump-freq').value, 10) || 1000
+    box_x:       parseFloat(document.getElementById('box-x').value)      || 50,
+    box_y:       parseFloat(document.getElementById('box-y').value)      || 50,
+    box_z:       parseFloat(document.getElementById('box-z').value)      || 50,
+    timestep:    parseFloat(document.getElementById('timestep').value)   || 1.0,
+    run_steps:   parseInt  (document.getElementById('run-steps').value)  || 100000,
+    thermo_freq: parseInt  (document.getElementById('thermo-freq').value)|| 1000,
+    dump_freq:   parseInt  (document.getElementById('dump-freq').value)  || 1000,
   };
-
   if (ensemble !== 'NVE') {
     sc.temp_start = parseFloat(document.getElementById('temp-start').value) || 300;
-    sc.temp_end = parseFloat(document.getElementById('temp-end').value) || 300;
+    sc.temp_end   = parseFloat(document.getElementById('temp-end').value)   || 300;
   }
-
   if (ensemble === 'NPT') {
     sc.press_start = parseFloat(document.getElementById('press-start').value) || 1.0;
-    sc.press_end = parseFloat(document.getElementById('press-end').value) || 1.0;
+    sc.press_end   = parseFloat(document.getElementById('press-end').value)   || 1.0;
   }
 
   addLog(`Ensemble : ${ensemble}`, 'step');
   addLog(`Box      : ${sc.box_x} × ${sc.box_y} × ${sc.box_z} Å`);
-  if (sc.temp_start !== undefined) addLog(`Temp     : ${sc.temp_start} → ${sc.temp_end} K`);
+  if (sc.temp_start !== undefined)  addLog(`Temp     : ${sc.temp_start} → ${sc.temp_end} K`);
   if (sc.press_start !== undefined) addLog(`Pressure : ${sc.press_start} → ${sc.press_end} atm`);
   addLog(`Steps    : ${sc.run_steps} | Timestep: ${sc.timestep} fs`);
 
   try {
-    const d = await apiFetch('/api/run', {
+    const r = await fetch(`${API_BASE}/api/run`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        molecules: selectedMols,
-        box: {
-          x: sc.box_x,
-          y: sc.box_y,
-          z: sc.box_z,
-          tolerance: 2.0
-        },
-        sim_config: sc
-      })
+        molecules:  selectedMols,
+        box:        {x: sc.box_x, y: sc.box_y, z: sc.box_z, tolerance: 2.0},
+        sim_config: sc,
+      }),
     });
-
-    if (!d.job_id) throw new Error('No job_id returned');
-
+    const d = await r.json();
+    if (!d.job_id) throw new Error(d.detail || 'No job_id returned');
     jobId = d.job_id;
     addLog(`✓ Job started — ID: ${jobId}`, 'success');
     document.getElementById('log-live').textContent = '● live';
     document.getElementById('log-live').style.color = 'var(--accent)';
     startPolling(jobId);
-  } catch (e) {
+  } catch(e) {
     addLog(`Failed to start: ${e.message}`, 'error');
   }
 }
 
+// ── Polling ───────────────────────────────────────────────────
 function startPolling(jid) {
   if (pollTimer) clearInterval(pollTimer);
-
   pollTimer = setInterval(async () => {
     try {
-      const d = await apiFetch(`/api/status/${jid}?since_log=${logIdx}`);
-
-      for (const line of (d.log || [])) {
-        addLog(line.msg, line.level || 'info');
-        logIdx++;
-      }
-
+      const r = await fetch(`${API_BASE}/api/status/${jid}?since_log=${logIdx}`);
+      const d = await r.json();
+      for (const line of (d.log||[])) { addLog(line.msg, line.level||'info'); logIdx++; }
       setProgress(d.progress || 0);
       updateStages(d.stage, d.status);
-
       if (d.status === 'done') {
         clearInterval(pollTimer);
         document.getElementById('log-live').textContent = '✓ complete';
-        document.getElementById('log-live').style.color = 'var(--accent)';
-        showResults();
-        setTimeout(() => goStep(5), 800);
+        showResults(); setTimeout(() => goStep(5), 800);
       } else if (d.status === 'error') {
         clearInterval(pollTimer);
         document.getElementById('log-live').textContent = '✗ error';
         document.getElementById('log-live').style.color = 'var(--orange)';
-        addLog(`Error: ${d.error || 'Unknown error'}`, 'error');
+        addLog(`Error: ${d.error}`, 'error');
       }
-    } catch (e) {
-      addLog(`Polling error: ${e.message}`, 'warn');
-    }
+    } catch(e) { addLog(`Polling error: ${e.message}`, 'warn'); }
   }, 2000);
 }
-
 function updateStages(stage, status) {
-  const map = {
-    packmol: 'st-packmol',
-    moltemplate: 'st-moltemplate',
-    lammps: 'st-lammps',
-    post: 'st-post'
-  };
-  const order = ['packmol', 'moltemplate', 'lammps', 'post'];
-  const idx = order.indexOf(stage);
-
-  order.forEach((s, i) => {
-    if (i < idx) {
-      setStage(map[s], 'done', '✓ Done');
-    } else if (s === stage) {
-      setStage(map[s], status === 'error' ? 'error' : 'running', status === 'error' ? '✗ Error' : '● Running');
-    } else {
-      setStage(map[s], 'pending', 'Pending');
-    }
+  const map   = {packmol:'st-packmol',moltemplate:'st-moltemplate',lammps:'st-lammps',post:'st-post'};
+  const order = ['packmol','moltemplate','lammps','post'];
+  const idx   = order.indexOf(stage);
+  order.forEach((s,i) => {
+    if (i < idx) setStage(map[s],'done','✓ Done');
+    else if (s === stage) setStage(map[s], status==='error'?'error':'running', status==='error'?'✗ Error':'● Running');
   });
 }
-
 function showResults() {
-  document.getElementById('r-mols').textContent = selectedMols.reduce((a, m) => a + m.count, 0).toLocaleString();
-  document.getElementById('r-ens').textContent = ensemble;
-  document.getElementById('r-job').textContent = jobId;
+  document.getElementById('r-mols').textContent   = selectedMols.reduce((a,m)=>a+m.count,0).toLocaleString();
+  document.getElementById('r-ens').textContent    = ensemble;
+  document.getElementById('r-job').textContent    = jobId;
   document.getElementById('r-status').textContent = '✓';
 }
-
 function dl(fname) {
-  if (!jobId) {
-    alert('No completed job.');
-    return;
-  }
-  window.open(`${API_BASE}/api/download/${jobId}/${encodeURIComponent(fname)}`, '_blank');
+  if (!jobId) return alert('No completed job.');
+  window.open(`${API_BASE}/api/download/${jobId}/${fname}`, '_blank');
 }
-
-function addLog(msg, level = 'info') {
+function addLog(msg, level='info') {
   const b = document.getElementById('log-body');
-  const ts = new Date().toLocaleTimeString('en', { hour12: false });
+  const ts = new Date().toLocaleTimeString('en',{hour12:false});
   b.innerHTML += `<div class="l-${level}">[${ts}] ${msg}</div>`;
   b.scrollTop = b.scrollHeight;
 }
-
 function setProgress(pct) {
-  document.getElementById('prog-bar').style.width = pct + '%';
-  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-bar').style.width = pct+'%';
+  document.getElementById('prog-pct').textContent = pct+'%';
 }
-
 function setStage(id, state, label) {
   const el = document.getElementById(id);
   if (!el) return;
   el.className = `stage ${state}`;
   el.querySelector('.stage-stat').textContent = label;
 }
-
 function reset() {
-  selectedMols = [];
-  jobId = null;
-  logIdx = 0;
-  ensemble = 'NVT';
+  selectedMols=[]; jobId=null; logIdx=0; ensemble='NVT';
   if (pollTimer) clearInterval(pollTimer);
-  renderMolList();
-  selectEnsemble('NVT');
-  goStep(1);
+  renderMolList(); selectEnsemble('NVT'); goStep(1);
 }
 
+// ── Bank ──────────────────────────────────────────────────────
 function renderBank() {
   const grid = document.getElementById('bank-grid');
   document.getElementById('bank-count').textContent =
-    `(${allMolecules.length} total · ${allMolecules.filter(m => m.ready).length} ready)`;
-
-  if (!allMolecules.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:11px;grid-column:1/-1">No molecules found.</div>';
-    return;
-  }
-
-  grid.innerHTML = allMolecules.map(m => `
-    <div class="mol-card ${m.ready ? 'ready' : ''}">
+    `(${allMolecules.length} total · ${allMolecules.filter(m=>m.ready).length} ready)`;
+  if (!allMolecules.length) { grid.innerHTML='<div style="color:var(--muted);font-size:11px;grid-column:1/-1">No molecules found.</div>'; return; }
+  grid.innerHTML = allMolecules.map(m=>`
+    <div class="mol-card ${m.ready?'ready':''}">
       <div class="mol-card-name">${m.name}</div>
       <div class="mol-card-tags">
-        <span class="tag ${m.has_pdb ? 'tag-ok' : 'tag-miss'}">.pdb ${m.has_pdb ? '✓' : '✗'}</span>
-        <span class="tag ${m.has_lt ? 'tag-ok' : 'tag-miss'}">.lt ${m.has_lt ? '✓' : '✗'}</span>
+        <span class="tag ${m.has_pdb?'tag-ok':'tag-miss'}">.pdb ${m.has_pdb?'✓':'✗'}</span>
+        <span class="tag ${m.has_lt?'tag-ok':'tag-miss'}">.lt ${m.has_lt?'✓':'✗'}</span>
       </div>
       <button class="mol-card-del" onclick="bankDel('${m.name}')">🗑 Delete</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
 function setMethod(method) {
-  document.getElementById('method-ligpargen').style.display = method === 'ligpargen' ? 'block' : 'none';
-  document.getElementById('method-manual').style.display = method === 'manual' ? 'block' : 'none';
-
+  document.getElementById('method-ligpargen').style.display = method==='ligpargen' ? 'block' : 'none';
+  document.getElementById('method-manual').style.display    = method==='manual'    ? 'block' : 'none';
   const lpgBtn = document.getElementById('method-btn-ligpargen');
   const manBtn = document.getElementById('method-btn-manual');
-
   if (method === 'ligpargen') {
-    lpgBtn.style.borderColor = 'var(--accent)';
-    lpgBtn.style.background = 'rgba(0,255,157,0.08)';
-    lpgBtn.style.color = 'var(--accent)';
-    manBtn.style.borderColor = 'var(--border)';
-    manBtn.style.background = 'var(--surface)';
-    manBtn.style.color = 'var(--muted)';
+    lpgBtn.style.borderColor='var(--accent)'; lpgBtn.style.background='rgba(0,255,157,0.08)'; lpgBtn.style.color='var(--accent)';
+    manBtn.style.borderColor='var(--border)'; manBtn.style.background='var(--surface)';        manBtn.style.color='var(--muted)';
   } else {
-    manBtn.style.borderColor = 'var(--accent)';
-    manBtn.style.background = 'rgba(0,255,157,0.08)';
-    manBtn.style.color = 'var(--accent)';
-    lpgBtn.style.borderColor = 'var(--border)';
-    lpgBtn.style.background = 'var(--surface)';
-    lpgBtn.style.color = 'var(--muted)';
+    manBtn.style.borderColor='var(--accent)'; manBtn.style.background='rgba(0,255,157,0.08)'; manBtn.style.color='var(--accent)';
+    lpgBtn.style.borderColor='var(--border)'; lpgBtn.style.background='var(--surface)';        lpgBtn.style.color='var(--muted)';
   }
-}
-
-function markUpload(input, statusId) {
-  const f = input.files[0];
-  if (!f) return;
-  document.getElementById(statusId).innerHTML = `<div class="uploaded-ok">✓ ${f.name}</div>`;
 }
 
 async function convertMolecule() {
-  const name = document.getElementById('lpg-name').value.trim().toLowerCase();
+  const name     = document.getElementById('lpg-name').value.trim().toLowerCase();
   const dataFile = document.getElementById('lpg-data').files[0];
-  const pdbFile = document.getElementById('lpg-pdb').files[0];
-
-  if (!name) return alert('Enter a molecule name.');
+  const pdbFile  = document.getElementById('lpg-pdb').files[0];
+  if (!name)     return alert('Enter a molecule name.');
   if (!dataFile) return alert('Upload the LAMMPS data file (.data) from LigParGen.');
-  if (!pdbFile) return alert('Upload the PDB file from LigParGen.');
+  if (!pdbFile)  return alert('Upload the PDB file from LigParGen.');
 
   const btn = document.getElementById('lpg-convert-btn');
   btn.innerHTML = '<span class="spinner"></span> Converting...';
-  btn.disabled = true;
+  btn.disabled  = true;
 
   const form = new FormData();
-  form.append('name', name);
+  form.append('name',      name);
   form.append('data_file', dataFile, dataFile.name);
-  form.append('pdb_file', pdbFile, pdbFile.name);
+  form.append('pdb_file',  pdbFile,  pdbFile.name);
 
   try {
-    const d = await apiFetch('/api/molecules/convert', {
-      method: 'POST',
-      body: form
-    });
-
+    const r = await fetch(`${API_BASE}/api/molecules/convert`, {method:'POST', body:form});
+    const d = await r.json();
     if (d.converted) {
       alert(`✅ ${name} converted and added to bank!`);
       document.getElementById('lpg-name').value = '';
       document.getElementById('lpg-data').value = '';
-      document.getElementById('lpg-pdb').value = '';
+      document.getElementById('lpg-pdb').value  = '';
       document.getElementById('lpg-data-status').innerHTML = '';
-      document.getElementById('lpg-pdb-status').innerHTML = '';
+      document.getElementById('lpg-pdb-status').innerHTML  = '';
       await loadMolecules();
     } else {
       alert('Conversion failed: ' + (d.detail || JSON.stringify(d)));
     }
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    btn.innerHTML = '🔄 Convert & Add to Bank';
-    btn.disabled = false;
-  }
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { btn.innerHTML = '🔄 Convert & Add to Bank'; btn.disabled = false; }
 }
 
+
+  const f = input.files[0];
+  if (!f) return;
+  document.getElementById(statusId).innerHTML = `<div class="uploaded-ok">✓ ${f.name}</div>`;
+}
 async function bankAdd() {
   const name = document.getElementById('bank-name').value.trim().toLowerCase();
-  const pdb = document.getElementById('bank-pdb').files[0];
-  const lt = document.getElementById('bank-lt').files[0];
-
+  const pdb  = document.getElementById('bank-pdb').files[0];
+  const lt   = document.getElementById('bank-lt').files[0];
   if (!name) return alert('Enter a molecule name.');
   if (!pdb && !lt) return alert('Upload at least one file.');
-
   const btn = document.getElementById('bank-add-btn');
-  btn.innerHTML = '<span class="spinner"></span> Uploading...';
-  btn.disabled = true;
-
+  btn.innerHTML = '<span class="spinner"></span> Uploading...'; btn.disabled = true;
   const form = new FormData();
   form.append('name', name);
   if (pdb) form.append('pdb_file', pdb, pdb.name);
-  if (lt) form.append('lt_file', lt, lt.name);
-
+  if (lt)  form.append('lt_file',  lt,  lt.name);
   try {
-    const d = await apiFetch('/api/molecules/upload', {
-      method: 'POST',
-      body: form
-    });
-
+    const r = await fetch(`${API_BASE}/api/molecules/upload`,{method:'POST',body:form});
+    const d = await r.json();
     if (d.name) {
-      document.getElementById('bank-name').value = '';
-      document.getElementById('bank-pdb').value = '';
-      document.getElementById('bank-lt').value = '';
-      document.getElementById('bank-pdb-status').innerHTML = '';
-      document.getElementById('bank-lt-status').innerHTML = '';
+      document.getElementById('bank-name').value='';
+      document.getElementById('bank-pdb').value='';
+      document.getElementById('bank-lt').value='';
+      document.getElementById('bank-pdb-status').innerHTML='';
+      document.getElementById('bank-lt-status').innerHTML='';
       await loadMolecules();
-    } else {
-      alert('Upload failed: ' + JSON.stringify(d));
-    }
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    btn.innerHTML = '+ Add to Bank';
-    btn.disabled = false;
-  }
+    } else alert('Upload failed: '+JSON.stringify(d));
+  } catch(e) { alert('Error: '+e.message); }
+  finally { btn.innerHTML='+ Add to Bank'; btn.disabled=false; }
 }
-
 async function bankDel(name) {
   if (!confirm(`Delete "${name}"?`)) return;
-  try {
-    await apiFetch(`/api/molecules/${encodeURIComponent(name)}`, { method: 'DELETE' });
-    await loadMolecules();
-  } catch (e) {
-    alert('Delete failed: ' + e.message);
-  }
+  try { await fetch(`${API_BASE}/api/molecules/${name}`,{method:'DELETE'}); await loadMolecules(); }
+  catch(e) { alert('Delete failed: '+e.message); }
 }
 </script>
 </body>
