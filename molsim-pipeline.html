@@ -573,7 +573,7 @@ let logIdx       = 0;
 let ensemble     = "NVT";
 
 // ── Init ──────────────────────────────────────────────────────
-window.addEventListener('load', () => {
+window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('conn-url').textContent = API_BASE;
   checkHealth();
   loadMolecules();
@@ -824,6 +824,17 @@ let vizStyle  = 'sphere';
 let spinning  = false;
 let spinAnim  = null;
 
+function load3DmolAndInit() {
+  return new Promise((resolve) => {
+    if (window.$3Dmol) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js';
+    s.onload = resolve;
+    s.onerror = resolve; // resolve even on error so pipeline doesn't break
+    document.head.appendChild(s);
+  });
+}
+
 function initViewer() {
   const el = document.getElementById('mol-viewer');
   viewer = $3Dmol.createViewer(el, {
@@ -833,6 +844,12 @@ function initViewer() {
 }
 
 async function loadStructure(jid) {
+  await load3DmolAndInit();
+  if (!window.$3Dmol) {
+    document.getElementById('viewer-placeholder').innerHTML =
+      `<div style="font-size:20px">⚠️</div><div style="font-size:11px;color:var(--orange)">3Dmol failed to load</div>`;
+    return;
+  }
   if (!viewer) initViewer();
   try {
     const r = await fetch(`${API_BASE}/api/visualize/${jid}`);
@@ -1006,7 +1023,6 @@ async function bankDel(name) {
   catch(e) { alert('Delete failed: '+e.message); }
 }
 </script>
-<!-- 3Dmol loaded last so it never blocks page -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js"></script>
+<!-- 3Dmol loaded lazily when results are shown -->
 </body>
 </html>
