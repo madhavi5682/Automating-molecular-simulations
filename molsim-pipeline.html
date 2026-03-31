@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MolSim Pipeline</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -201,6 +202,11 @@ select option{background:var(--surface);}
 @keyframes spin{to{transform:rotate(360deg);}}
 .dot{width:8px;height:8px;border-radius:50%;}
 .dot.r{background:#ff5f57;}.dot.y{background:#ffbd2e;}.dot.g{background:#28ca41;}
+.viz-btn{padding:6px 14px;border-radius:5px;font-family:var(--mono);font-size:10px;
+  font-weight:700;cursor:pointer;border:1px solid var(--border);
+  background:var(--surface);color:var(--muted);transition:all 0.15s;}
+.viz-btn:hover{border-color:var(--accent);color:var(--text);}
+.viz-btn.active{border-color:var(--accent);background:rgba(0,255,157,0.08);color:var(--accent);}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
@@ -401,6 +407,70 @@ select option{background:var(--surface);}
       <div class="stat-box"><div class="stat-val" id="r-job">—</div><div class="stat-lbl">Job ID</div></div>
       <div class="stat-box"><div class="stat-val" id="r-status">✓</div><div class="stat-lbl">Status</div></div>
     </div>
+
+    <!-- 3D Viewer -->
+    <div class="card">
+      <div class="card-title">🧬 3D Molecular Visualization</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+        Showing initial packed configuration. Rotate: left-click drag &nbsp;|&nbsp; Zoom: scroll &nbsp;|&nbsp; Pan: right-click drag
+      </div>
+
+      <!-- Style controls -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="viz-btn active" id="vbtn-sphere" onclick="setVizStyle('sphere')">⬤ VDW Spheres</button>
+        <button class="viz-btn" id="vbtn-stick" onclick="setVizStyle('stick')">— Stick</button>
+        <button class="viz-btn" id="vbtn-line" onclick="setVizStyle('line')">∕ Line</button>
+        <button class="viz-btn" id="vbtn-cartoon" onclick="setVizStyle('cartoon')">◎ Cartoon</button>
+        <div style="flex:1"></div>
+        <button class="viz-btn" onclick="spinMol()" id="spin-btn">↻ Spin</button>
+        <button class="viz-btn" onclick="resetView()">⌂ Reset</button>
+      </div>
+
+      <!-- Viewer canvas -->
+      <div id="mol-viewer" style="width:100%;height:400px;background:#04070d;
+        border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;">
+        <div id="viewer-placeholder" style="position:absolute;inset:0;display:flex;
+          align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--muted);">
+          <div style="font-size:32px">🧬</div>
+          <div style="font-size:12px">Loading structure...</div>
+        </div>
+      </div>
+
+      <!-- VMD instructions -->
+      <div style="margin-top:14px;padding:14px;background:var(--surface);
+        border:1px solid var(--border);border-radius:8px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;
+          text-transform:uppercase;color:var(--accent);margin-bottom:10px;">
+          🖥 Open Full Trajectory in VMD
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:10px;">
+          Download <strong style="color:var(--text)">system.data</strong> and
+          <strong style="color:var(--text)">traj.lammpstrj</strong> below, then in VMD
+          Extensions → Tk Console, paste:
+        </div>
+        <div style="background:#04070d;border:1px solid var(--border);border-radius:6px;
+          padding:12px;font-size:11px;color:#94a3b8;font-family:var(--mono);line-height:1.9;
+          position:relative;">
+          <button onclick="copyVmdScript()" style="position:absolute;top:8px;right:8px;
+            background:none;border:1px solid var(--border);color:var(--muted);
+            padding:3px 10px;border-radius:4px;font-size:10px;cursor:pointer;
+            font-family:var(--mono);" id="copy-vmd-btn">Copy</button>
+          <pre id="vmd-script" style="margin:0;white-space:pre-wrap;">package require topotools
+topo readlammpsdata "system.data" full
+mol addfile "traj.lammpstrj" type lammpstrj waitfor all
+mol delrep 0 top
+mol representation VDW 1.0 12.0
+mol color Name
+mol selection all
+mol material Opaque
+mol addrep top
+display projection Orthographic
+animate goto start</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download files -->
     <div class="res-grid">
       <div class="res-card"><div class="res-icon">💾</div><div class="res-name">system.data</div><div class="res-desc">LAMMPS data file — atoms, bonds, angles</div><button class="btn-dl" onclick="dl('system.data')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📐</div><div class="res-name">run.in</div><div class="res-desc">Auto-generated LAMMPS run script</div><button class="btn-dl" onclick="dl('run.in')">⬇ Download</button></div>
@@ -711,6 +781,8 @@ function showResults() {
   document.getElementById('r-ens').textContent    = ensemble;
   document.getElementById('r-job').textContent    = jobId;
   document.getElementById('r-status').textContent = '✓';
+  // Load 3D structure
+  setTimeout(() => loadStructure(jobId), 500);
 }
 function dl(fname) {
   if (!jobId) return alert('No completed job.');
@@ -738,7 +810,93 @@ function reset() {
   renderMolList(); selectEnsemble('NVT'); goStep(1);
 }
 
-// ── Bank ──────────────────────────────────────────────────────
+// ── 3Dmol Visualization ──────────────────────────────────────
+let viewer    = null;
+let vizStyle  = 'sphere';
+let spinning  = false;
+let spinAnim  = null;
+
+function initViewer() {
+  const el = document.getElementById('mol-viewer');
+  viewer = $3Dmol.createViewer(el, {
+    backgroundColor: '#04070d',
+    antialias: true,
+  });
+}
+
+async function loadStructure(jid) {
+  if (!viewer) initViewer();
+  try {
+    const r = await fetch(`${API_BASE}/api/visualize/${jid}`);
+    if (!r.ok) throw new Error('No structure available');
+    const pdbText = await r.text();
+
+    viewer.clear();
+    viewer.addModel(pdbText, 'pdb');
+    applyStyle(vizStyle);
+    viewer.zoomTo();
+    viewer.render();
+
+    // Hide placeholder
+    document.getElementById('viewer-placeholder').style.display = 'none';
+  } catch(e) {
+    document.getElementById('viewer-placeholder').innerHTML =
+      `<div style="font-size:20px">⚠️</div><div style="font-size:11px;color:var(--orange)">Could not load structure: ${e.message}</div>`;
+  }
+}
+
+function applyStyle(style) {
+  if (!viewer) return;
+  viewer.setStyle({}, {});
+  if (style === 'sphere') {
+    viewer.setStyle({}, {sphere: {colorscheme: 'Jmol', scale: 0.8}});
+  } else if (style === 'stick') {
+    viewer.setStyle({}, {stick: {colorscheme: 'Jmol', radius: 0.15}});
+  } else if (style === 'line') {
+    viewer.setStyle({}, {line: {colorscheme: 'Jmol'}});
+  } else if (style === 'cartoon') {
+    viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
+  }
+  viewer.render();
+}
+
+function setVizStyle(style) {
+  vizStyle = style;
+  ['sphere','stick','line','cartoon'].forEach(s => {
+    document.getElementById(`vbtn-${s}`)?.classList.toggle('active', s === style);
+  });
+  applyStyle(style);
+}
+
+function spinMol() {
+  spinning = !spinning;
+  const btn = document.getElementById('spin-btn');
+  if (spinning) {
+    btn.classList.add('active');
+    btn.textContent = '◼ Stop';
+    viewer.spin('y', 1);
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '↻ Spin';
+    viewer.spin(false);
+  }
+}
+
+function resetView() {
+  if (!viewer) return;
+  viewer.zoomTo();
+  viewer.render();
+}
+
+function copyVmdScript() {
+  const script = document.getElementById('vmd-script').textContent;
+  navigator.clipboard.writeText(script).then(() => {
+    const btn = document.getElementById('copy-vmd-btn');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
 function renderBank() {
   const grid = document.getElementById('bank-grid');
   document.getElementById('bank-count').textContent =
