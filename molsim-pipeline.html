@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MolSim Pipeline</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -606,17 +605,26 @@ function goStep(n) {
 // ── Health ────────────────────────────────────────────────────
 async function checkHealth() {
   const b = document.getElementById('conn-badge');
-  try {
-    const r = await fetch(`${API_BASE}/api/health`, {signal: AbortSignal.timeout(10000)});
-    const d = await r.json();
-    const ok = d.moltemplate && d.packmol && d.lammps;
-    b.textContent = ok ? `⬤ Connected  (${d.lt_files} lt · ${d.pdb_files} pdb)` : '⚠ Tools missing';
-    b.style.color = ok ? 'var(--accent)' : '#f59e0b';
-    b.style.borderColor = ok ? 'rgba(0,255,157,0.4)' : 'rgba(245,158,11,0.4)';
-  } catch {
-    b.textContent = '⬤ Offline';
-    b.style.color = 'var(--orange)';
-    b.style.borderColor = 'rgba(255,107,53,0.4)';
+  // retry up to 3 times with 5s gap — handles slow HF wake-up
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(`${API_BASE}/api/health`, {signal: AbortSignal.timeout(15000)});
+      const d = await r.json();
+      const ok = d.moltemplate && d.packmol && d.lammps;
+      b.textContent = ok ? `⬤ Connected  (${d.lt_files} lt · ${d.pdb_files} pdb)` : '⚠ Tools missing';
+      b.style.color = ok ? 'var(--accent)' : '#f59e0b';
+      b.style.borderColor = ok ? 'rgba(0,255,157,0.4)' : 'rgba(245,158,11,0.4)';
+      return; // success — stop retrying
+    } catch {
+      if (attempt < 3) {
+        b.textContent = `⬤ Connecting... (attempt ${attempt}/3)`;
+        await new Promise(r => setTimeout(r, 5000)); // wait 5s before retry
+      } else {
+        b.textContent = '⬤ Offline — check HF Space';
+        b.style.color = 'var(--orange)';
+        b.style.borderColor = 'rgba(255,107,53,0.4)';
+      }
+    }
   }
 }
 
@@ -998,5 +1006,7 @@ async function bankDel(name) {
   catch(e) { alert('Delete failed: '+e.message); }
 }
 </script>
+<!-- 3Dmol loaded last so it never blocks page -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js"></script>
 </body>
 </html>
