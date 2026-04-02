@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MolSim Pipeline</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<!-- NGL Viewer -->
+<script src="https://cdn.jsdelivr.net/npm/ngl@2.0.0-dev.38/dist/ngl.js"></script>
+<!-- Chart.js for thermo plots -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
   --bg:#060810; --surface:#0d1117; --card:#111827; --border:#1a2535;
@@ -64,8 +68,6 @@ select option{background:var(--surface);}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 .row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
 @media(max-width:640px){.row2,.row3,.row4{grid-template-columns:1fr 1fr;}}
-
-/* Ensemble cards */
 .ensemble-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px;}
 @media(max-width:600px){.ensemble-grid{grid-template-columns:1fr;}}
 .ens-card{border:1px solid var(--border);border-radius:10px;padding:18px 14px;cursor:pointer;
@@ -78,8 +80,6 @@ select option{background:var(--surface);}
 .ens-desc{font-size:10px;color:var(--muted);line-height:1.6;}
 .ens-card.selected .ens-name{color:var(--accent);}
 .ens-card.selected .ens-desc{color:rgba(230,237,243,0.7);}
-
-/* Param sections */
 .param-sec{border:1px solid var(--border);border-radius:8px;padding:18px;
   margin-bottom:14px;background:var(--surface);animation:fadeUp 0.2s ease;}
 .param-sec-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
@@ -88,7 +88,6 @@ select option{background:var(--surface);}
 .ptag-all{background:rgba(0,255,157,0.1);color:var(--accent);}
 .ptag-nvt{background:rgba(168,85,247,0.15);color:var(--purple);}
 .ptag-npt{background:rgba(0,102,255,0.15);color:#60a5fa;}
-
 .mol-list{margin-bottom:12px;}
 .mol-row{display:grid;grid-template-columns:2fr 100px auto;gap:10px;align-items:center;
   padding:8px 12px;background:var(--surface);border:1px solid var(--border);
@@ -101,7 +100,6 @@ select option{background:var(--surface);}
 .mol-empty{color:var(--muted);font-size:11px;padding:12px;text-align:center;
   border:1px dashed var(--border);border-radius:6px;margin-bottom:12px;}
 .add-mol-row{display:grid;grid-template-columns:1fr 100px auto;gap:10px;align-items:end;}
-
 .upload-zone{border:1px dashed var(--border);border-radius:6px;padding:16px;
   text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
 .upload-zone:hover{border-color:var(--accent);background:rgba(0,255,157,0.02);}
@@ -111,7 +109,6 @@ select option{background:var(--surface);}
 .uploaded-ok{display:flex;align-items:center;gap:6px;padding:5px 10px;
   background:rgba(0,102,255,0.1);border:1px solid rgba(0,102,255,0.3);
   border-radius:5px;margin-top:6px;font-size:10px;color:#60a5fa;}
-
 .stepper{display:flex;align-items:center;margin-bottom:22px;overflow-x:auto;padding-bottom:4px;}
 .step{display:flex;align-items:center;gap:7px;flex-shrink:0;}
 .step-num{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);
@@ -126,7 +123,6 @@ select option{background:var(--surface);}
 .step-line{flex:1;height:1px;background:var(--border);min-width:16px;max-width:50px;}
 .sub{display:none;animation:fadeUp 0.3s ease;}
 .sub.active{display:block;}
-
 .stages{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
 .stage{display:flex;align-items:center;gap:12px;padding:12px 16px;
   background:var(--surface);border:1px solid var(--border);border-radius:8px;transition:all 0.3s;}
@@ -143,7 +139,6 @@ select option{background:var(--surface);}
 .stage.done    .stage-stat{color:#60a5fa;background:rgba(0,102,255,0.1);}
 .stage.error   .stage-stat{color:var(--orange);background:rgba(255,107,53,0.1);}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
-
 .prog-wrap{background:var(--surface);border-radius:100px;height:4px;margin-bottom:4px;overflow:hidden;}
 .prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));
   border-radius:100px;transition:width 0.5s ease;}
@@ -154,7 +149,6 @@ select option{background:var(--surface);}
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .l-info{color:#4a5568;}.l-success{color:var(--accent);}.l-cmd{color:#60a5fa;}
 .l-warn{color:#f59e0b;}.l-error{color:var(--orange);}.l-step{color:var(--purple);font-weight:700;}
-
 .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
 @media(max-width:560px){.res-grid{grid-template-columns:1fr;}}
 .res-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;transition:all 0.2s;}
@@ -185,6 +179,7 @@ select option{background:var(--surface);}
 .btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:10px;flex-wrap:wrap;}
 .alert{display:flex;gap:10px;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:11px;line-height:1.7;}
 .alert-info{background:rgba(0,255,157,0.05);border:1px solid rgba(0,255,157,0.2);}
+.alert-warn{background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);color:#f59e0b;}
 .bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px;}
 .mol-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;transition:all 0.2s;}
 .mol-card.ready{border-color:rgba(0,255,157,0.2);}
@@ -203,6 +198,54 @@ select option{background:var(--surface);}
 .dot.r{background:#ff5f57;}.dot.y{background:#ffbd2e;}.dot.g{background:#28ca41;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── NGL Viewer styles ─────────────────────────────── */
+#ngl-viewport{width:100%;height:420px;background:#04070d;border-radius:8px;
+  border:1px solid var(--border);position:relative;overflow:hidden;}
+.viz-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+.viz-btn{padding:6px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--text);
+  cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;}
+.viz-btn:hover{border-color:var(--accent);color:var(--accent);}
+.viz-btn.active{border-color:var(--accent);background:rgba(0,255,157,0.08);color:var(--accent);}
+.viz-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.viz-sep{width:1px;height:22px;background:var(--border);margin:0 4px;}
+.viz-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;align-self:center;}
+.viz-select{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:11px;
+  outline:none;cursor:pointer;width:auto;}
+.viz-select:focus{border-color:var(--accent);}
+.ngl-loading{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:#04070d;z-index:10;gap:10px;}
+.ngl-loading-text{font-size:11px;color:var(--accent);}
+.ngl-empty{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;pointer-events:none;}
+.ngl-empty-ico{font-size:40px;opacity:0.2;}
+.ngl-empty-text{font-size:11px;color:var(--muted);}
+.frame-row{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.frame-slider{flex:1;-webkit-appearance:none;appearance:none;height:3px;
+  background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
+.frame-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;
+  border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 6px rgba(0,255,157,0.4);}
+.frame-label{font-size:10px;color:var(--muted);min-width:70px;text-align:right;}
+.viz-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
+@media(max-width:560px){.viz-stat-row{grid-template-columns:1fr 1fr;}}
+.viz-stat{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:10px;text-align:center;}
+.viz-stat-val{font-family:var(--display);font-size:16px;font-weight:700;color:var(--accent);}
+.viz-stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+/* ── Thermo plot styles ────────────────────────────── */
+.thermo-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.thermo-tab{padding:7px 16px;font-family:var(--mono);font-size:10px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;
+  background:none;color:var(--muted);border-bottom:2px solid transparent;
+  margin-bottom:-1px;transition:all 0.2s;}
+.thermo-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.thermo-panel{display:none;}
+.thermo-panel.active{display:block;}
+.chart-wrap{position:relative;height:240px;background:#04070d;border-radius:8px;
+  border:1px solid var(--border);padding:12px;}
 </style>
 </head>
 <body>
@@ -233,6 +276,7 @@ select option{background:var(--surface);}
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab(this,'tab-run')">⚡ Run Simulation</button>
+  <button class="tab" onclick="switchTab(this,'tab-viz')">🔬 Visualize</button>
   <button class="tab" onclick="switchTab(this,'tab-bank')">🧬 Molecule Bank</button>
 </div>
 
@@ -251,7 +295,7 @@ select option{background:var(--surface);}
     <div class="step" id="s5"><div class="step-num">5</div><div class="step-label">Results</div></div>
   </div>
 
-  <!-- STEP 1 — Molecules -->
+  <!-- STEP 1 -->
   <div class="sub active" id="sub1">
     <div class="card">
       <div class="card-title">Select Molecules</div>
@@ -271,35 +315,27 @@ select option{background:var(--surface);}
       <button class="btn btn-primary" onclick="goStep(2)">Next: Choose Ensemble →</button></div>
   </div>
 
-  <!-- STEP 2 — Ensemble -->
+  <!-- STEP 2 -->
   <div class="sub" id="sub2">
     <div class="card">
       <div class="card-title">Choose Ensemble</div>
       <div class="ensemble-grid">
-
         <div class="ens-card selected" id="ens-NVT" onclick="selectEnsemble('NVT')">
-          <div class="ens-icon">🌡️</div>
-          <div class="ens-name">NVT</div>
+          <div class="ens-icon">🌡️</div><div class="ens-name">NVT</div>
           <div class="ens-desc">Constant Volume + Temperature<br>Nosé-Hoover thermostat<br><br>Set: temperature, box size</div>
         </div>
-
         <div class="ens-card" id="ens-NPT" onclick="selectEnsemble('NPT')">
-          <div class="ens-icon">🔩</div>
-          <div class="ens-name">NPT</div>
+          <div class="ens-icon">🔩</div><div class="ens-name">NPT</div>
           <div class="ens-desc">Constant Pressure + Temperature<br>Box volume can change<br><br>Set: temperature, pressure, box size</div>
         </div>
-
         <div class="ens-card" id="ens-NVE" onclick="selectEnsemble('NVE')">
-          <div class="ens-icon">⚡</div>
-          <div class="ens-name">NVE</div>
+          <div class="ens-icon">⚡</div><div class="ens-name">NVE</div>
           <div class="ens-desc">Constant Volume + Energy<br>No thermostat/barostat<br><br>Set: box size only</div>
         </div>
-
       </div>
-
-      <div id="info-NVT" class="alert alert-info">🌡️ <b>NVT</b> — Temperature is controlled, volume is fixed. You will set start/end temperature and box dimensions.</div>
-      <div id="info-NPT" class="alert alert-info" style="display:none">🔩 <b>NPT</b> — Both temperature and pressure controlled. Box volume adjusts. You will set temperature, pressure, and initial box dimensions.</div>
-      <div id="info-NVE" class="alert alert-info" style="display:none">⚡ <b>NVE</b> — No thermostat or barostat. Total energy is conserved. Typically used after equilibration. Only box size required.</div>
+      <div id="info-NVT" class="alert alert-info">🌡️ <b>NVT</b> — Temperature is controlled, volume is fixed.</div>
+      <div id="info-NPT" class="alert alert-info" style="display:none">🔩 <b>NPT</b> — Both temperature and pressure controlled.</div>
+      <div id="info-NVE" class="alert alert-info" style="display:none">⚡ <b>NVE</b> — No thermostat or barostat. Total energy conserved.</div>
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
@@ -307,15 +343,13 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- STEP 3 — Parameters -->
+  <!-- STEP 3 -->
   <div class="sub" id="sub3">
     <div class="card">
       <div class="card-title">Simulation Parameters
         <span id="ens-badge" style="padding:3px 12px;border-radius:20px;font-size:10px;
           background:rgba(0,255,157,0.12);color:var(--accent);font-weight:700;"></span>
       </div>
-
-      <!-- Box — always shown -->
       <div class="param-sec">
         <div class="param-sec-title">📦 Simulation Box <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
         <div class="row3">
@@ -324,18 +358,14 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>Box Z (Å)</label><input type="number" id="box-z" value="50" min="1"></div>
         </div>
       </div>
-
-      <!-- Temperature — NVT + NPT -->
       <div class="param-sec" id="sec-temp">
         <div class="param-sec-title">🌡️ Temperature <span class="ptag ptag-nvt" id="temp-tag">NVT / NPT</span></div>
         <div class="row2">
           <div class="field" style="margin:0"><label>Start Temperature (K)</label><input type="number" id="temp-start" value="300" min="1"></div>
           <div class="field" style="margin:0"><label>End Temperature (K)</label><input type="number" id="temp-end" value="300" min="1"></div>
         </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:8px;">Set both to the same value for constant temperature. Use different values for a temperature ramp.</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:8px;">Set both to the same value for constant temperature.</div>
       </div>
-
-      <!-- Pressure — NPT only -->
       <div class="param-sec" id="sec-press" style="display:none">
         <div class="param-sec-title">🔩 Pressure <span class="ptag ptag-npt">NPT ONLY</span></div>
         <div class="row2">
@@ -343,8 +373,6 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>End Pressure (atm)</label><input type="number" id="press-end" value="1.0" min="0" step="0.1"></div>
         </div>
       </div>
-
-      <!-- Run params — always shown -->
       <div class="param-sec">
         <div class="param-sec-title">⏱️ Run Parameters <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
         <div class="row4">
@@ -354,7 +382,6 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>Dump Freq</label><input type="number" id="dump-freq" value="1000" min="1"></div>
         </div>
       </div>
-
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goStep(2)">← Back</button>
@@ -362,7 +389,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- STEP 4 — Running -->
+  <!-- STEP 4 -->
   <div class="sub" id="sub4">
     <div class="card">
       <div class="card-title">Pipeline Progress</div>
@@ -393,7 +420,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- STEP 5 — Results -->
+  <!-- STEP 5 -->
   <div class="sub" id="sub5">
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="r-mols">—</div><div class="stat-lbl">Molecules</div></div>
@@ -411,11 +438,116 @@ select option{background:var(--surface);}
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="reset()">🔄 New Simulation</button>
+      <button class="btn btn-success" onclick="openVizTab()">🔬 Visualize Results →</button>
       <button class="btn btn-success" onclick="dl('results.zip')">⬇ Download All</button>
     </div>
   </div>
 
 </div><!-- /tab-run -->
+
+<!-- ═══════════════ TAB: VISUALIZE ═══════════════ -->
+<div class="tab-panel" id="tab-viz">
+
+  <!-- 3D Viewer Card -->
+  <div class="card">
+    <div class="card-title">3D Structure Viewer — NGL</div>
+
+    <div class="viz-toolbar">
+      <!-- File selector -->
+      <span class="viz-label">File</span>
+      <button class="viz-btn active" id="vbtn-pdb" onclick="vizLoadFile('pdb')">📦 packed.pdb</button>
+      <button class="viz-btn" id="vbtn-traj" onclick="vizLoadFile('traj')">🎞 trajectory.xyz</button>
+      <div class="viz-sep"></div>
+      <!-- Representation -->
+      <span class="viz-label">Style</span>
+      <select class="viz-select" id="rep-select" onchange="changeRep(this.value)">
+        <option value="ball+stick">Ball + Stick</option>
+        <option value="spacefill">Spacefill</option>
+        <option value="licorice">Licorice</option>
+        <option value="line">Line</option>
+        <option value="cartoon">Cartoon</option>
+        <option value="surface">Surface</option>
+      </select>
+      <div class="viz-sep"></div>
+      <!-- Color scheme -->
+      <span class="viz-label">Color</span>
+      <select class="viz-select" id="color-select" onchange="changeColor(this.value)">
+        <option value="element">Element</option>
+        <option value="residue">Residue</option>
+        <option value="chain">Chain</option>
+        <option value="bfactor">B-factor</option>
+        <option value="electrostatic">Electrostatic</option>
+      </select>
+      <div class="viz-sep"></div>
+      <button class="viz-btn" onclick="nglCenter()">⊙ Center</button>
+      <button class="viz-btn" onclick="nglToggleSpin()" id="spin-btn">↻ Spin</button>
+      <button class="viz-btn" onclick="nglScreenshot()">📷 Screenshot</button>
+    </div>
+
+    <!-- Viewport -->
+    <div id="ngl-viewport">
+      <div class="ngl-empty" id="ngl-empty">
+        <div class="ngl-empty-ico">⚗️</div>
+        <div class="ngl-empty-text" id="ngl-empty-text">
+          Run a simulation first, then load a structure file above.
+        </div>
+      </div>
+    </div>
+
+    <!-- Frame scrubber (shown only for trajectory) -->
+    <div class="frame-row" id="frame-row" style="display:none">
+      <button class="viz-btn" id="play-btn" onclick="nglTogglePlay()">▶ Play</button>
+      <input type="range" class="frame-slider" id="frame-slider"
+             min="0" max="100" value="0" oninput="nglSetFrame(this.value)">
+      <span class="frame-label" id="frame-label">Frame 0 / 0</span>
+      <select class="viz-select" id="speed-select" style="width:auto">
+        <option value="100">Fast</option>
+        <option value="200" selected>Normal</option>
+        <option value="400">Slow</option>
+      </select>
+    </div>
+
+    <!-- Stats row -->
+    <div class="viz-stat-row">
+      <div class="viz-stat"><div class="viz-stat-val" id="vs-atoms">—</div><div class="viz-stat-lbl">Atoms</div></div>
+      <div class="viz-stat"><div class="viz-stat-val" id="vs-frames">—</div><div class="viz-stat-lbl">Frames</div></div>
+      <div class="viz-stat"><div class="viz-stat-val" id="vs-res">—</div><div class="viz-stat-lbl">Residues</div></div>
+      <div class="viz-stat"><div class="viz-stat-val" id="vs-file">none</div><div class="viz-stat-lbl">Loaded File</div></div>
+    </div>
+  </div>
+
+  <!-- Thermo Plots Card -->
+  <div class="card">
+    <div class="card-title">Thermodynamic Data — log.lammps</div>
+
+    <div id="thermo-no-job" class="alert alert-info" style="margin-bottom:0">
+      💡 Complete a simulation run to see thermodynamic plots here.
+      <button class="viz-btn" style="margin-left:10px;" onclick="loadThermoData()">🔄 Load Log</button>
+    </div>
+
+    <div id="thermo-content" style="display:none">
+      <div class="thermo-tabs">
+        <button class="thermo-tab active" onclick="switchThermo(this,'tp-temp')">Temperature</button>
+        <button class="thermo-tab" onclick="switchThermo(this,'tp-energy')">Potential Energy</button>
+        <button class="thermo-tab" onclick="switchThermo(this,'tp-press')">Pressure</button>
+        <button class="thermo-tab" onclick="switchThermo(this,'tp-density')">Density</button>
+      </div>
+      <div class="thermo-panel active" id="tp-temp">
+        <div class="chart-wrap"><canvas id="chart-temp"></canvas></div>
+      </div>
+      <div class="thermo-panel" id="tp-energy">
+        <div class="chart-wrap"><canvas id="chart-energy"></canvas></div>
+      </div>
+      <div class="thermo-panel" id="tp-press">
+        <div class="chart-wrap"><canvas id="chart-press"></canvas></div>
+      </div>
+      <div class="thermo-panel" id="tp-density">
+        <div class="chart-wrap"><canvas id="chart-density"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-viz -->
 
 <!-- ═══════════════ TAB: BANK ═══════════════ -->
 <div class="tab-panel" id="tab-bank">
@@ -445,6 +577,7 @@ select option{background:var(--surface);}
 </div>
 
 </div><!-- /app -->
+
 <script>
 const API_BASE = "https://Madhavi3-molsim-backend.hf.space";
 
@@ -455,13 +588,345 @@ let pollTimer    = null;
 let logIdx       = 0;
 let ensemble     = "NVT";
 
+// ── NGL state ─────────────────────────────────────────────────
+let nglStage      = null;
+let nglComponent  = null;
+let nglPlaying    = false;
+let nglPlayTimer  = null;
+let nglSpinning   = false;
+let thermoCharts  = {};
+
 // ── Init ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   document.getElementById('conn-url').textContent = API_BASE;
   checkHealth();
   loadMolecules();
   updateEnsembleParams();
+  initNGL();
 });
+
+// ── NGL Viewer Init ───────────────────────────────────────────
+function initNGL() {
+  try {
+    nglStage = new NGL.Stage("ngl-viewport", {
+      backgroundColor: "#04070d",
+      quality: "medium",
+      impostor: true,
+    });
+    // Handle resize
+    window.addEventListener("resize", () => {
+      if (nglStage) nglStage.handleResize();
+    });
+    console.log("NGL Stage initialized");
+  } catch(e) {
+    console.error("NGL init failed:", e);
+    document.getElementById('ngl-empty-text').textContent =
+      "NGL Viewer failed to initialize. Check console for details.";
+  }
+}
+
+// ── NGL: Load file ────────────────────────────────────────────
+async function vizLoadFile(type) {
+  if (!jobId) {
+    document.getElementById('ngl-empty-text').textContent =
+      "No completed job found. Run a simulation first.";
+    return;
+  }
+  if (!nglStage) { alert("NGL Viewer not initialized."); return; }
+
+  // Update toolbar buttons
+  document.querySelectorAll('[id^="vbtn-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById(`vbtn-${type}`).classList.add('active');
+
+  // Show loading overlay
+  const vp = document.getElementById('ngl-viewport');
+  const loadDiv = document.createElement('div');
+  loadDiv.className = 'ngl-loading';
+  loadDiv.id = 'ngl-loading-overlay';
+  loadDiv.innerHTML = `
+    <div class="spinner"></div>
+    <div class="ngl-loading-text">Loading ${type === 'pdb' ? 'packed.pdb' : 'trajectory.xyz'}...</div>
+  `;
+  vp.appendChild(loadDiv);
+
+  // Hide empty placeholder
+  document.getElementById('ngl-empty').style.display = 'none';
+
+  // Clear previous
+  nglStage.removeAllComponents();
+  nglComponent = null;
+  nglStopPlay();
+
+  try {
+    let url, ext;
+    if (type === 'pdb') {
+      url = `${API_BASE}/api/download/${jobId}/packed.pdb`;
+      ext = 'pdb';
+      document.getElementById('frame-row').style.display = 'none';
+    } else {
+      // trajectory — uses the /api/convert endpoint (requires backend patch)
+      url = `${API_BASE}/api/convert/${jobId}/trajectory`;
+      ext = 'xyz';
+      document.getElementById('frame-row').style.display = 'flex';
+    }
+
+    const rep   = document.getElementById('rep-select').value;
+    const color = document.getElementById('color-select').value;
+
+    nglComponent = await nglStage.loadFile(url, { ext });
+    nglComponent.addRepresentation(rep, { colorScheme: color });
+    nglStage.autoView();
+
+    // Update stats
+    const structure = nglComponent.structure || nglComponent.trajectory;
+    if (nglComponent.structure) {
+      document.getElementById('vs-atoms').textContent =
+        nglComponent.structure.atomCount.toLocaleString();
+      document.getElementById('vs-res').textContent =
+        nglComponent.structure.residueCount.toLocaleString();
+    }
+
+    if (type === 'traj' && nglComponent.trajectory) {
+      const frames = nglComponent.trajectory.frameCount || 0;
+      document.getElementById('vs-frames').textContent = frames;
+      const sl = document.getElementById('frame-slider');
+      sl.max = Math.max(0, frames - 1);
+      sl.value = 0;
+      document.getElementById('frame-label').textContent = `Frame 0 / ${frames - 1}`;
+    } else {
+      document.getElementById('vs-frames').textContent = type === 'pdb' ? '1' : '—';
+    }
+
+    document.getElementById('vs-file').textContent = type === 'pdb' ? 'packed.pdb' : 'traj.xyz';
+
+  } catch(e) {
+    console.error("NGL load error:", e);
+    document.getElementById('ngl-empty').style.display = 'flex';
+    document.getElementById('ngl-empty-text').textContent =
+      type === 'traj'
+        ? "Trajectory load failed. Make sure the backend /api/convert endpoint is added (see README)."
+        : `Load failed: ${e.message}`;
+  } finally {
+    const overlay = document.getElementById('ngl-loading-overlay');
+    if (overlay) overlay.remove();
+  }
+}
+
+// ── NGL: Change representation ────────────────────────────────
+function changeRep(repName) {
+  if (!nglComponent) return;
+  nglComponent.removeAllRepresentations();
+  nglComponent.addRepresentation(repName, {
+    colorScheme: document.getElementById('color-select').value,
+  });
+}
+
+// ── NGL: Change color scheme ──────────────────────────────────
+function changeColor(scheme) {
+  if (!nglComponent) return;
+  const rep = document.getElementById('rep-select').value;
+  nglComponent.removeAllRepresentations();
+  nglComponent.addRepresentation(rep, { colorScheme: scheme });
+}
+
+// ── NGL: Center ───────────────────────────────────────────────
+function nglCenter() {
+  if (nglStage) nglStage.autoView(400);
+}
+
+// ── NGL: Spin ─────────────────────────────────────────────────
+function nglToggleSpin() {
+  if (!nglStage) return;
+  nglSpinning = !nglSpinning;
+  nglStage.setSpin(nglSpinning ? [0,1,0] : null, nglSpinning ? 0.01 : 0);
+  document.getElementById('spin-btn').classList.toggle('active', nglSpinning);
+}
+
+// ── NGL: Trajectory play ──────────────────────────────────────
+function nglTogglePlay() {
+  nglPlaying ? nglStopPlay() : nglStartPlay();
+}
+
+function nglStartPlay() {
+  if (!nglComponent || !nglComponent.trajectory) return;
+  nglPlaying = true;
+  document.getElementById('play-btn').textContent = '⏸ Pause';
+  const speed = parseInt(document.getElementById('speed-select').value);
+  const frames = parseInt(document.getElementById('frame-slider').max);
+  nglPlayTimer = setInterval(() => {
+    const sl = document.getElementById('frame-slider');
+    let cur = parseInt(sl.value) + 1;
+    if (cur > frames) cur = 0;
+    sl.value = cur;
+    nglSetFrame(cur);
+  }, speed);
+}
+
+function nglStopPlay() {
+  nglPlaying = false;
+  clearInterval(nglPlayTimer);
+  document.getElementById('play-btn').textContent = '▶ Play';
+}
+
+function nglSetFrame(idx) {
+  idx = parseInt(idx);
+  const frames = parseInt(document.getElementById('frame-slider').max);
+  document.getElementById('frame-label').textContent = `Frame ${idx} / ${frames}`;
+  if (nglComponent && nglComponent.trajectory) {
+    nglComponent.trajectory.setFrame(idx);
+  }
+}
+
+// ── NGL: Screenshot ───────────────────────────────────────────
+function nglScreenshot() {
+  if (!nglStage) return;
+  nglStage.makeImage({ factor: 2, antialias: true, trim: false, transparent: false })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `molsim_${jobId || 'structure'}.png`;
+      a.click(); URL.revokeObjectURL(url);
+    });
+}
+
+// ── Thermo: Load and parse log.lammps ────────────────────────
+async function loadThermoData() {
+  if (!jobId) { alert("No completed job."); return; }
+  try {
+    const r = await fetch(`${API_BASE}/api/download/${jobId}/log.lammps`);
+    const text = await r.text();
+    parseThermoLog(text);
+  } catch(e) {
+    alert("Failed to load log.lammps: " + e.message);
+  }
+}
+
+function parseThermoLog(text) {
+  // Parse LAMMPS log: look for thermo_style line to find column headers,
+  // then collect numeric rows
+  const lines = text.split('\n');
+  let headers = null;
+  const data  = {};
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Detect header line (contains "Step" and other thermo keywords)
+    if (!headers && trimmed.startsWith('Step')) {
+      headers = trimmed.split(/\s+/);
+      headers.forEach(h => data[h] = []);
+      continue;
+    }
+    // Collect data rows (all-numeric lines after header)
+    if (headers) {
+      const parts = trimmed.split(/\s+/);
+      if (parts.length === headers.length && parts.every(p => !isNaN(p) && p !== '')) {
+        headers.forEach((h, i) => data[h].push(parseFloat(parts[i])));
+      }
+      // Stop at "Loop time" line (end of run block)
+      if (trimmed.startsWith('Loop time')) headers = null;
+    }
+  }
+
+  const steps = data['Step'] || [];
+  if (!steps.length) {
+    alert("Could not parse thermo data from log.lammps. Make sure the run completed.");
+    return;
+  }
+
+  document.getElementById('thermo-no-job').style.display = 'none';
+  document.getElementById('thermo-content').style.display = 'block';
+
+  // Destroy existing charts
+  Object.values(thermoCharts).forEach(c => c.destroy());
+  thermoCharts = {};
+
+  const chartDefs = [
+    { id: 'chart-temp',    key: 'Temp',   label: 'Temperature (K)',    color: '#ff6b35' },
+    { id: 'chart-energy',  key: 'PotEng', label: 'Potential Energy (kcal/mol)', color: '#a855f7' },
+    { id: 'chart-press',   key: 'Press',  label: 'Pressure (atm)',     color: '#0066ff' },
+    { id: 'chart-density', key: 'Density',label: 'Density (g/cm³)',    color: '#00ff9d' },
+  ];
+
+  chartDefs.forEach(({ id, key, label, color }) => {
+    const yData = data[key];
+    const ctx   = document.getElementById(id);
+    if (!ctx) return;
+    if (!yData || !yData.length) {
+      ctx.parentElement.innerHTML = `<div style="color:var(--muted);font-size:11px;
+        display:flex;align-items:center;justify-content:center;height:100%">
+        No "${key}" column in log.lammps for this ensemble.</div>`;
+      return;
+    }
+    thermoCharts[id] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: steps,
+        datasets: [{
+          label,
+          data: yData,
+          borderColor: color,
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: true,
+          backgroundColor: color + '18',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { labels: { color: '#e6edf3', font: { family: 'IBM Plex Mono', size: 11 } } },
+          tooltip: {
+            backgroundColor: '#0d1117',
+            borderColor: '#1a2535',
+            borderWidth: 1,
+            titleColor: '#e6edf3',
+            bodyColor: '#4a5568',
+            titleFont: { family: 'IBM Plex Mono' },
+            bodyFont:  { family: 'IBM Plex Mono' },
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 }, maxTicksLimit: 8 },
+            grid:  { color: '#1a2535' },
+            title: { display: true, text: 'Step', color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 } },
+          },
+          y: {
+            ticks: { color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 } },
+            grid:  { color: '#1a2535' },
+            title: { display: true, text: label, color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 } },
+          }
+        }
+      }
+    });
+  });
+}
+
+function switchThermo(btn, id) {
+  document.querySelectorAll('.thermo-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.thermo-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // Resize chart after panel becomes visible
+  const chart = thermoCharts[id.replace('tp-','chart-').replace('temp','temp')
+    .replace('energy','energy').replace('press','press').replace('density','density')];
+  if (chart) chart.resize();
+  // Re-map panel → chart id
+  const map = { 'tp-temp':'chart-temp', 'tp-energy':'chart-energy',
+                'tp-press':'chart-press', 'tp-density':'chart-density' };
+  const cid = map[id];
+  if (thermoCharts[cid]) thermoCharts[cid].resize();
+}
+
+// ── Open viz tab with current job ────────────────────────────
+function openVizTab() {
+  const tab = document.querySelector('[onclick*="tab-viz"]');
+  if (tab) { switchTab(tab, 'tab-viz'); }
+  // Auto-load PDB
+  if (jobId) vizLoadFile('pdb');
+}
 
 // ── Tabs ──────────────────────────────────────────────────────
 function switchTab(btn, id) {
@@ -470,6 +935,7 @@ function switchTab(btn, id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id === 'tab-bank') renderBank();
+  if (id === 'tab-viz' && nglStage) nglStage.handleResize();
 }
 
 // ── Stepper ───────────────────────────────────────────────────
@@ -555,7 +1021,6 @@ function selectEnsemble(ens) {
   });
   updateEnsembleParams();
 }
-
 function updateEnsembleParams() {
   const showTemp  = (ensemble === 'NVT' || ensemble === 'NPT');
   const showPress = (ensemble === 'NPT');
