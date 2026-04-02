@@ -626,6 +626,15 @@ function initNGL() {
 }
 
 // ── NGL: Load file ────────────────────────────────────────────
+// Strategy:
+//   packed.pdb  → load directly, single frame, no scrubber
+//   trajectory  → backend converts lammpstrj → multi-frame PDB
+//                 load as structure, then attach TrajectoryPlayer via
+//                 nglComponent.addTrajectory() for frame stepping
+let nglFrameCount  = 0;
+let nglCurrentFrame = 0;
+let nglTrajectoryPlayer = null;  // NGL TrajectoryPlayer instance
+
 async function vizLoadFile(type) {
   if (!jobId) {
     document.getElementById('ngl-empty-text').textContent =
@@ -634,82 +643,108 @@ async function vizLoadFile(type) {
   }
   if (!nglStage) { alert("NGL Viewer not initialized."); return; }
 
-  // Update toolbar buttons
+  // Update toolbar active state
   document.querySelectorAll('[id^="vbtn-"]').forEach(b => b.classList.remove('active'));
   document.getElementById(`vbtn-${type}`).classList.add('active');
 
   // Show loading overlay
   const vp = document.getElementById('ngl-viewport');
-  const loadDiv = document.createElement('div');
-  loadDiv.className = 'ngl-loading';
-  loadDiv.id = 'ngl-loading-overlay';
+  let loadDiv = document.getElementById('ngl-loading-overlay');
+  if (!loadDiv) {
+    loadDiv = document.createElement('div');
+    loadDiv.className = 'ngl-loading';
+    loadDiv.id = 'ngl-loading-overlay';
+    vp.appendChild(loadDiv);
+  }
   loadDiv.innerHTML = `
     <div class="spinner"></div>
-    <div class="ngl-loading-text">Loading ${type === 'pdb' ? 'packed.pdb' : 'trajectory.xyz'}...</div>
+    <div class="ngl-loading-text">Loading ${type === 'pdb' ? 'packed.pdb' : 'trajectory (converting)...'}...</div>
   `;
-  vp.appendChild(loadDiv);
-
-  // Hide empty placeholder
+  loadDiv.style.display = 'flex';
   document.getElementById('ngl-empty').style.display = 'none';
 
-  // Clear previous
+  // Stop any running playback, clear stage
+  nglStopPlay();
   nglStage.removeAllComponents();
   nglComponent = null;
-  nglStopPlay();
+  nglTrajectoryPlayer = null;
+  nglFrameCount  = 0;
+  nglCurrentFrame = 0;
 
   try {
-    let url, ext;
-    if (type === 'pdb') {
-      url = `${API_BASE}/api/download/${jobId}/packed.pdb`;
-      ext = 'pdb';
-      document.getElementById('frame-row').style.display = 'none';
-    } else {
-      // trajectory — uses the /api/convert endpoint (requires backend patch)
-      url = `${API_BASE}/api/convert/${jobId}/trajectory`;
-      ext = 'xyz';
-      document.getElementById('frame-row').style.display = 'flex';
-    }
-
     const rep   = document.getElementById('rep-select').value;
     const color = document.getElementById('color-select').value;
 
-    nglComponent = await nglStage.loadFile(url, { ext });
-    nglComponent.addRepresentation(rep, { colorScheme: color });
-    nglStage.autoView();
+    if (type === 'pdb') {
+      // ── Static structure (packed.pdb) ────────────────────────
+      const url = `${API_BASE}/api/download/${jobId}/packed.pdb`;
+      nglComponent = await nglStage.loadFile(url, { ext: 'pdb', defaultRepresentation: false });
+      nglComponent.addRepresentation(rep, { colorScheme: color });
+      nglStage.autoView();
 
-    // Update stats
-    const structure = nglComponent.structure || nglComponent.trajectory;
-    if (nglComponent.structure) {
-      document.getElementById('vs-atoms').textContent =
-        nglComponent.structure.atomCount.toLocaleString();
-      document.getElementById('vs-res').textContent =
-        nglComponent.structure.residueCount.toLocaleString();
-    }
+      document.getElementById('frame-row').style.display = 'none';
+      document.getElementById('vs-frames').textContent = '1';
+      document.getElementById('vs-file').textContent   = 'packed.pdb';
+      document.getElementById('vs-atoms').textContent  =
+        nglComponent.structure ? nglComponent.structure.atomCount.toLocaleString() : '—';
+      document.getElementById('vs-res').textContent    =
+        nglComponent.structure ? nglComponent.structure.residueCount.toLocaleString() : '—';
 
-    if (type === 'traj' && nglComponent.trajectory) {
-      const frames = nglComponent.trajectory.frameCount || 0;
-      document.getElementById('vs-frames').textContent = frames;
-      const sl = document.getElementById('frame-slider');
-      sl.max = Math.max(0, frames - 1);
-      sl.value = 0;
-      document.getElementById('frame-label').textContent = `Frame 0 / ${frames - 1}`;
     } else {
-      document.getElementById('vs-frames').textContent = type === 'pdb' ? '1' : '—';
-    }
+      // ── Trajectory (multi-frame PDB from backend) ─────────────
+      // Backend converts lammpstrj → multi-model PDB (each MODEL block = one frame)
+      const url = `${API_BASE}/api/convert/${jobId}/trajectory`;
 
-    document.getElementById('vs-file').textContent = type === 'pdb' ? 'packed.pdb' : 'traj.xyz';
+      // Load the multi-model PDB as a structure
+      nglComponent = await nglStage.loadFile(url, { ext: 'pdb', defaultRepresentation: false });
+      nglComponent.addRepresentation(rep, { colorScheme: color });
+      nglStage.autoView();
+
+      // Count MODEL blocks = number of frames
+      // NGL exposes modelStore on the structure
+      const modelCount = nglComponent.structure
+        ? (nglComponent.structure.modelStore ? nglComponent.structure.modelStore.count : 1)
+        : 1;
+      nglFrameCount = modelCount;
+
+      // Wire up frame scrubber
+      const sl = document.getElementById('frame-slider');
+      sl.min   = 0;
+      sl.max   = Math.max(0, nglFrameCount - 1);
+      sl.value = 0;
+      document.getElementById('frame-label').textContent = `Frame 0 / ${nglFrameCount - 1}`;
+      document.getElementById('frame-row').style.display = 'flex';
+
+      // Show first model
+      _applyFrame(0);
+
+      document.getElementById('vs-frames').textContent = nglFrameCount;
+      document.getElementById('vs-file').textContent   = 'trajectory';
+      document.getElementById('vs-atoms').textContent  =
+        nglComponent.structure ? nglComponent.structure.atomCount.toLocaleString() : '—';
+      document.getElementById('vs-res').textContent    =
+        nglComponent.structure ? nglComponent.structure.residueCount.toLocaleString() : '—';
+    }
 
   } catch(e) {
     console.error("NGL load error:", e);
     document.getElementById('ngl-empty').style.display = 'flex';
     document.getElementById('ngl-empty-text').textContent =
       type === 'traj'
-        ? "Trajectory load failed. Make sure the backend /api/convert endpoint is added (see README)."
+        ? `Trajectory load failed: ${e.message}. Check that /api/convert/${jobId}/trajectory returns a valid multi-model PDB.`
         : `Load failed: ${e.message}`;
   } finally {
     const overlay = document.getElementById('ngl-loading-overlay');
-    if (overlay) overlay.remove();
+    if (overlay) overlay.style.display = 'none';
   }
+}
+
+// Apply a specific model/frame by filtering the structure's model selection
+function _applyFrame(idx) {
+  if (!nglComponent || !nglComponent.structure) return;
+  nglCurrentFrame = idx;
+  // Use NGL's modelIndex selection to show only the chosen frame
+  nglComponent.setSelection(`/model ${idx}`);
 }
 
 // ── NGL: Change representation ────────────────────────────────
@@ -748,33 +783,33 @@ function nglTogglePlay() {
 }
 
 function nglStartPlay() {
-  if (!nglComponent || !nglComponent.trajectory) return;
+  if (!nglComponent || nglFrameCount < 2) return;
   nglPlaying = true;
   document.getElementById('play-btn').textContent = '⏸ Pause';
-  const speed = parseInt(document.getElementById('speed-select').value);
-  const frames = parseInt(document.getElementById('frame-slider').max);
+  const speedMap = { '100': 80, '200': 160, '400': 320 };
+  const speed = speedMap[document.getElementById('speed-select').value] || 160;
   nglPlayTimer = setInterval(() => {
-    const sl = document.getElementById('frame-slider');
-    let cur = parseInt(sl.value) + 1;
-    if (cur > frames) cur = 0;
-    sl.value = cur;
-    nglSetFrame(cur);
+    let next = nglCurrentFrame + 1;
+    if (next >= nglFrameCount) next = 0;
+    document.getElementById('frame-slider').value = next;
+    nglSetFrame(next);
   }, speed);
 }
 
 function nglStopPlay() {
   nglPlaying = false;
   clearInterval(nglPlayTimer);
-  document.getElementById('play-btn').textContent = '▶ Play';
+  nglPlayTimer = null;
+  const btn = document.getElementById('play-btn');
+  if (btn) btn.textContent = '▶ Play';
 }
 
 function nglSetFrame(idx) {
   idx = parseInt(idx);
-  const frames = parseInt(document.getElementById('frame-slider').max);
-  document.getElementById('frame-label').textContent = `Frame ${idx} / ${frames}`;
-  if (nglComponent && nglComponent.trajectory) {
-    nglComponent.trajectory.setFrame(idx);
-  }
+  nglCurrentFrame = idx;
+  document.getElementById('frame-label').textContent =
+    `Frame ${idx} / ${Math.max(0, nglFrameCount - 1)}`;
+  _applyFrame(idx);
 }
 
 // ── NGL: Screenshot ───────────────────────────────────────────
