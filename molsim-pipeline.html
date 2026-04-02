@@ -201,11 +201,6 @@ select option{background:var(--surface);}
 @keyframes spin{to{transform:rotate(360deg);}}
 .dot{width:8px;height:8px;border-radius:50%;}
 .dot.r{background:#ff5f57;}.dot.y{background:#ffbd2e;}.dot.g{background:#28ca41;}
-.viz-btn{padding:6px 14px;border-radius:5px;font-family:var(--mono);font-size:10px;
-  font-weight:700;cursor:pointer;border:1px solid var(--border);
-  background:var(--surface);color:var(--muted);transition:all 0.15s;}
-.viz-btn:hover{border-color:var(--accent);color:var(--text);}
-.viz-btn.active{border-color:var(--accent);background:rgba(0,255,157,0.08);color:var(--accent);}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
@@ -406,70 +401,6 @@ select option{background:var(--surface);}
       <div class="stat-box"><div class="stat-val" id="r-job">—</div><div class="stat-lbl">Job ID</div></div>
       <div class="stat-box"><div class="stat-val" id="r-status">✓</div><div class="stat-lbl">Status</div></div>
     </div>
-
-    <!-- 3D Viewer -->
-    <div class="card">
-      <div class="card-title">🧬 3D Molecular Visualization</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
-        Showing initial packed configuration. Rotate: left-click drag &nbsp;|&nbsp; Zoom: scroll &nbsp;|&nbsp; Pan: right-click drag
-      </div>
-
-      <!-- Style controls -->
-      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-        <button class="viz-btn active" id="vbtn-sphere" onclick="setVizStyle('sphere')">⬤ VDW Spheres</button>
-        <button class="viz-btn" id="vbtn-stick" onclick="setVizStyle('stick')">— Stick</button>
-        <button class="viz-btn" id="vbtn-line" onclick="setVizStyle('line')">∕ Line</button>
-        <button class="viz-btn" id="vbtn-cartoon" onclick="setVizStyle('cartoon')">◎ Cartoon</button>
-        <div style="flex:1"></div>
-        <button class="viz-btn" onclick="spinMol()" id="spin-btn">↻ Spin</button>
-        <button class="viz-btn" onclick="resetView()">⌂ Reset</button>
-      </div>
-
-      <!-- Viewer canvas -->
-      <div id="mol-viewer" style="width:100%;height:400px;background:#04070d;
-        border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;">
-        <div id="viewer-placeholder" style="position:absolute;inset:0;display:flex;
-          align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--muted);">
-          <div style="font-size:32px">🧬</div>
-          <div style="font-size:12px">Loading structure...</div>
-        </div>
-      </div>
-
-      <!-- VMD instructions -->
-      <div style="margin-top:14px;padding:14px;background:var(--surface);
-        border:1px solid var(--border);border-radius:8px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;
-          text-transform:uppercase;color:var(--accent);margin-bottom:10px;">
-          🖥 Open Full Trajectory in VMD
-        </div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:10px;">
-          Download <strong style="color:var(--text)">system.data</strong> and
-          <strong style="color:var(--text)">traj.lammpstrj</strong> below, then in VMD
-          Extensions → Tk Console, paste:
-        </div>
-        <div style="background:#04070d;border:1px solid var(--border);border-radius:6px;
-          padding:12px;font-size:11px;color:#94a3b8;font-family:var(--mono);line-height:1.9;
-          position:relative;">
-          <button onclick="copyVmdScript()" style="position:absolute;top:8px;right:8px;
-            background:none;border:1px solid var(--border);color:var(--muted);
-            padding:3px 10px;border-radius:4px;font-size:10px;cursor:pointer;
-            font-family:var(--mono);" id="copy-vmd-btn">Copy</button>
-          <pre id="vmd-script" style="margin:0;white-space:pre-wrap;">package require topotools
-topo readlammpsdata "system.data" full
-mol addfile "traj.lammpstrj" type lammpstrj waitfor all
-mol delrep 0 top
-mol representation VDW 1.0 12.0
-mol color Name
-mol selection all
-mol material Opaque
-mol addrep top
-display projection Orthographic
-animate goto start</pre>
-        </div>
-      </div>
-    </div>
-
-    <!-- Download files -->
     <div class="res-grid">
       <div class="res-card"><div class="res-icon">💾</div><div class="res-name">system.data</div><div class="res-desc">LAMMPS data file — atoms, bonds, angles</div><button class="btn-dl" onclick="dl('system.data')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📐</div><div class="res-name">run.in</div><div class="res-desc">Auto-generated LAMMPS run script</div><button class="btn-dl" onclick="dl('run.in')">⬇ Download</button></div>
@@ -495,69 +426,21 @@ animate goto start</pre>
   </div>
   <div class="card">
     <div class="card-title">Add New Molecule</div>
-
-    <!-- Toggle between two methods -->
-    <div style="display:flex;gap:8px;margin-bottom:18px;">
-      <button id="method-btn-ligpargen" onclick="setMethod('ligpargen')"
-        style="flex:1;padding:9px;border-radius:6px;font-family:var(--mono);font-size:11px;
-        font-weight:700;cursor:pointer;border:1px solid var(--accent);
-        background:rgba(0,255,157,0.08);color:var(--accent);">
-        🧪 From LigParGen (.data + .pdb)
-      </button>
-      <button id="method-btn-manual" onclick="setMethod('manual')"
-        style="flex:1;padding:9px;border-radius:6px;font-family:var(--mono);font-size:11px;
-        font-weight:700;cursor:pointer;border:1px solid var(--border);
-        background:var(--surface);color:var(--muted);">
-        📁 Manual (.lt + .pdb)
-      </button>
+    <div class="field"><label>Molecule Name</label>
+      <input type="text" id="bank-name" placeholder="e.g. ethanol, toluene (lowercase)"></div>
+    <div class="row2">
+      <div class="field" style="margin:0"><label>PDB File</label>
+        <div class="upload-zone"><input type="file" accept=".pdb" id="bank-pdb" onchange="markUpload(this,'bank-pdb-status')">
+        <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb</div></div>
+        <div id="bank-pdb-status"></div></div>
+      <div class="field" style="margin:0"><label>LT File</label>
+        <div class="upload-zone"><input type="file" accept=".lt" id="bank-lt" onchange="markUpload(this,'bank-lt-status')">
+        <div class="upload-zone-lbl"><strong>Click</strong> to upload .lt</div></div>
+        <div id="bank-lt-status"></div></div>
     </div>
-
-    <!-- METHOD 1: LigParGen -->
-    <div id="method-ligpargen">
-      <div class="alert alert-info">
-        🧪 Download from <strong>LigParGen</strong> → click <strong>LAMMPS</strong> button (gives .data file) and <strong>PDB</strong> button. The server will convert .data → .lt automatically using ltemplify.
-      </div>
-      <div class="field"><label>Molecule Name</label>
-        <input type="text" id="lpg-name" placeholder="e.g. methane, ethanol (lowercase)"></div>
-      <div class="row2">
-        <div class="field" style="margin:0"><label>LAMMPS Data File (.data)</label>
-          <div class="upload-zone"><input type="file" id="lpg-data" onchange="markUpload(this,'lpg-data-status')">
-          <div class="upload-zone-lbl"><strong>Click</strong> to upload .data file<br><span style="font-size:9px">(the .py file from LigParGen — rename to .data)</span></div></div>
-          <div id="lpg-data-status"></div></div>
-        <div class="field" style="margin:0"><label>PDB File (.pdb)</label>
-          <div class="upload-zone"><input type="file" accept=".pdb" id="lpg-pdb" onchange="markUpload(this,'lpg-pdb-status')">
-          <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb file</div></div>
-          <div id="lpg-pdb-status"></div></div>
-      </div>
-      <div style="margin-top:14px;">
-        <button class="btn btn-primary" id="lpg-convert-btn" onclick="convertMolecule()">
-          🔄 Convert &amp; Add to Bank
-        </button>
-      </div>
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary" id="bank-add-btn" onclick="bankAdd()">+ Add to Bank</button>
     </div>
-
-    <!-- METHOD 2: Manual -->
-    <div id="method-manual" style="display:none">
-      <div class="alert alert-info">
-        📁 Upload .lt and .pdb files directly if you already have them.
-      </div>
-      <div class="field"><label>Molecule Name</label>
-        <input type="text" id="bank-name" placeholder="e.g. ethanol, toluene (lowercase)"></div>
-      <div class="row2">
-        <div class="field" style="margin:0"><label>PDB File</label>
-          <div class="upload-zone"><input type="file" accept=".pdb" id="bank-pdb" onchange="markUpload(this,'bank-pdb-status')">
-          <div class="upload-zone-lbl"><strong>Click</strong> to upload .pdb</div></div>
-          <div id="bank-pdb-status"></div></div>
-        <div class="field" style="margin:0"><label>LT File</label>
-          <div class="upload-zone"><input type="file" accept=".lt" id="bank-lt" onchange="markUpload(this,'bank-lt-status')">
-          <div class="upload-zone-lbl"><strong>Click</strong> to upload .lt</div></div>
-          <div id="bank-lt-status"></div></div>
-      </div>
-      <div style="margin-top:14px;">
-        <button class="btn btn-primary" id="bank-add-btn" onclick="bankAdd()">+ Add to Bank</button>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -573,7 +456,7 @@ let logIdx       = 0;
 let ensemble     = "NVT";
 
 // ── Init ──────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   document.getElementById('conn-url').textContent = API_BASE;
   checkHealth();
   loadMolecules();
@@ -605,26 +488,17 @@ function goStep(n) {
 // ── Health ────────────────────────────────────────────────────
 async function checkHealth() {
   const b = document.getElementById('conn-badge');
-  // retry up to 3 times with 5s gap — handles slow HF wake-up
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const r = await fetch(`${API_BASE}/api/health`, {signal: AbortSignal.timeout(15000)});
-      const d = await r.json();
-      const ok = d.moltemplate && d.packmol && d.lammps;
-      b.textContent = ok ? `⬤ Connected  (${d.lt_files} lt · ${d.pdb_files} pdb)` : '⚠ Tools missing';
-      b.style.color = ok ? 'var(--accent)' : '#f59e0b';
-      b.style.borderColor = ok ? 'rgba(0,255,157,0.4)' : 'rgba(245,158,11,0.4)';
-      return; // success — stop retrying
-    } catch {
-      if (attempt < 3) {
-        b.textContent = `⬤ Connecting... (attempt ${attempt}/3)`;
-        await new Promise(r => setTimeout(r, 5000)); // wait 5s before retry
-      } else {
-        b.textContent = '⬤ Offline — check HF Space';
-        b.style.color = 'var(--orange)';
-        b.style.borderColor = 'rgba(255,107,53,0.4)';
-      }
-    }
+  try {
+    const r = await fetch(`${API_BASE}/api/health`, {signal: AbortSignal.timeout(10000)});
+    const d = await r.json();
+    const ok = d.moltemplate && d.packmol && d.lammps;
+    b.textContent = ok ? `⬤ Connected  (${d.lt_files} lt · ${d.pdb_files} pdb)` : '⚠ Tools missing';
+    b.style.color = ok ? 'var(--accent)' : '#f59e0b';
+    b.style.borderColor = ok ? 'rgba(0,255,157,0.4)' : 'rgba(245,158,11,0.4)';
+  } catch {
+    b.textContent = '⬤ Offline';
+    b.style.color = 'var(--orange)';
+    b.style.borderColor = 'rgba(255,107,53,0.4)';
   }
 }
 
@@ -789,8 +663,6 @@ function showResults() {
   document.getElementById('r-ens').textContent    = ensemble;
   document.getElementById('r-job').textContent    = jobId;
   document.getElementById('r-status').textContent = '✓';
-  // Load 3D structure
-  setTimeout(() => loadStructure(jobId), 500);
 }
 function dl(fname) {
   if (!jobId) return alert('No completed job.');
@@ -818,110 +690,7 @@ function reset() {
   renderMolList(); selectEnsemble('NVT'); goStep(1);
 }
 
-// ── 3Dmol Visualization ──────────────────────────────────────
-let viewer    = null;
-let vizStyle  = 'sphere';
-let spinning  = false;
-let spinAnim  = null;
-
-function load3DmolAndInit() {
-  return new Promise((resolve) => {
-    if (window.$3Dmol) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.3/3Dmol-min.js';
-    s.onload = resolve;
-    s.onerror = resolve; // resolve even on error so pipeline doesn't break
-    document.head.appendChild(s);
-  });
-}
-
-function initViewer() {
-  const el = document.getElementById('mol-viewer');
-  viewer = $3Dmol.createViewer(el, {
-    backgroundColor: '#04070d',
-    antialias: true,
-  });
-}
-
-async function loadStructure(jid) {
-  await load3DmolAndInit();
-  if (!window.$3Dmol) {
-    document.getElementById('viewer-placeholder').innerHTML =
-      `<div style="font-size:20px">⚠️</div><div style="font-size:11px;color:var(--orange)">3Dmol failed to load</div>`;
-    return;
-  }
-  if (!viewer) initViewer();
-  try {
-    const r = await fetch(`${API_BASE}/api/visualize/${jid}`);
-    if (!r.ok) throw new Error('No structure available');
-    const pdbText = await r.text();
-
-    viewer.clear();
-    viewer.addModel(pdbText, 'pdb');
-    applyStyle(vizStyle);
-    viewer.zoomTo();
-    viewer.render();
-
-    // Hide placeholder
-    document.getElementById('viewer-placeholder').style.display = 'none';
-  } catch(e) {
-    document.getElementById('viewer-placeholder').innerHTML =
-      `<div style="font-size:20px">⚠️</div><div style="font-size:11px;color:var(--orange)">Could not load structure: ${e.message}</div>`;
-  }
-}
-
-function applyStyle(style) {
-  if (!viewer) return;
-  viewer.setStyle({}, {});
-  if (style === 'sphere') {
-    viewer.setStyle({}, {sphere: {colorscheme: 'Jmol', scale: 0.8}});
-  } else if (style === 'stick') {
-    viewer.setStyle({}, {stick: {colorscheme: 'Jmol', radius: 0.15}});
-  } else if (style === 'line') {
-    viewer.setStyle({}, {line: {colorscheme: 'Jmol'}});
-  } else if (style === 'cartoon') {
-    viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
-  }
-  viewer.render();
-}
-
-function setVizStyle(style) {
-  vizStyle = style;
-  ['sphere','stick','line','cartoon'].forEach(s => {
-    document.getElementById(`vbtn-${s}`)?.classList.toggle('active', s === style);
-  });
-  applyStyle(style);
-}
-
-function spinMol() {
-  spinning = !spinning;
-  const btn = document.getElementById('spin-btn');
-  if (spinning) {
-    btn.classList.add('active');
-    btn.textContent = '◼ Stop';
-    viewer.spin('y', 1);
-  } else {
-    btn.classList.remove('active');
-    btn.textContent = '↻ Spin';
-    viewer.spin(false);
-  }
-}
-
-function resetView() {
-  if (!viewer) return;
-  viewer.zoomTo();
-  viewer.render();
-}
-
-function copyVmdScript() {
-  const script = document.getElementById('vmd-script').textContent;
-  navigator.clipboard.writeText(script).then(() => {
-    const btn = document.getElementById('copy-vmd-btn');
-    btn.textContent = '✓ Copied';
-    setTimeout(() => btn.textContent = 'Copy', 2000);
-  });
-}
-
+// ── Bank ──────────────────────────────────────────────────────
 function renderBank() {
   const grid = document.getElementById('bank-grid');
   document.getElementById('bank-count').textContent =
@@ -937,56 +706,7 @@ function renderBank() {
       <button class="mol-card-del" onclick="bankDel('${m.name}')">🗑 Delete</button>
     </div>`).join('');
 }
-function setMethod(method) {
-  document.getElementById('method-ligpargen').style.display = method==='ligpargen' ? 'block' : 'none';
-  document.getElementById('method-manual').style.display    = method==='manual'    ? 'block' : 'none';
-  const lpgBtn = document.getElementById('method-btn-ligpargen');
-  const manBtn = document.getElementById('method-btn-manual');
-  if (method === 'ligpargen') {
-    lpgBtn.style.borderColor='var(--accent)'; lpgBtn.style.background='rgba(0,255,157,0.08)'; lpgBtn.style.color='var(--accent)';
-    manBtn.style.borderColor='var(--border)'; manBtn.style.background='var(--surface)';        manBtn.style.color='var(--muted)';
-  } else {
-    manBtn.style.borderColor='var(--accent)'; manBtn.style.background='rgba(0,255,157,0.08)'; manBtn.style.color='var(--accent)';
-    lpgBtn.style.borderColor='var(--border)'; lpgBtn.style.background='var(--surface)';        lpgBtn.style.color='var(--muted)';
-  }
-}
-
-async function convertMolecule() {
-  const name     = document.getElementById('lpg-name').value.trim().toLowerCase();
-  const dataFile = document.getElementById('lpg-data').files[0];
-  const pdbFile  = document.getElementById('lpg-pdb').files[0];
-  if (!name)     return alert('Enter a molecule name.');
-  if (!dataFile) return alert('Upload the LAMMPS data file (.data) from LigParGen.');
-  if (!pdbFile)  return alert('Upload the PDB file from LigParGen.');
-
-  const btn = document.getElementById('lpg-convert-btn');
-  btn.innerHTML = '<span class="spinner"></span> Converting...';
-  btn.disabled  = true;
-
-  const form = new FormData();
-  form.append('name',      name);
-  form.append('data_file', dataFile, dataFile.name);
-  form.append('pdb_file',  pdbFile,  pdbFile.name);
-
-  try {
-    const r = await fetch(`${API_BASE}/api/molecules/convert`, {method:'POST', body:form});
-    const d = await r.json();
-    if (d.converted) {
-      alert(`✅ ${name} converted and added to bank!`);
-      document.getElementById('lpg-name').value = '';
-      document.getElementById('lpg-data').value = '';
-      document.getElementById('lpg-pdb').value  = '';
-      document.getElementById('lpg-data-status').innerHTML = '';
-      document.getElementById('lpg-pdb-status').innerHTML  = '';
-      await loadMolecules();
-    } else {
-      alert('Conversion failed: ' + (d.detail || JSON.stringify(d)));
-    }
-  } catch(e) { alert('Error: ' + e.message); }
-  finally { btn.innerHTML = '🔄 Convert & Add to Bank'; btn.disabled = false; }
-}
-
-
+function markUpload(input, statusId) {
   const f = input.files[0];
   if (!f) return;
   document.getElementById(statusId).innerHTML = `<div class="uploaded-ok">✓ ${f.name}</div>`;
@@ -1023,6 +743,5 @@ async function bankDel(name) {
   catch(e) { alert('Delete failed: '+e.message); }
 }
 </script>
-<!-- 3Dmol loaded lazily when results are shown -->
 </body>
 </html>
