@@ -198,7 +198,7 @@ select option{background:var(--surface);}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-/* ── NGL Viewer styles ─────────────────────────────── */
+/* NGL Viewer */
 #ngl-viewport{width:100%;height:420px;background:#04070d;border-radius:8px;
   border:1px solid var(--border);position:relative;overflow:hidden;}
 .viz-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
@@ -233,10 +233,15 @@ select option{background:var(--surface);}
   padding:10px;text-align:center;}
 .viz-stat-val{font-family:var(--display);font-size:16px;font-weight:700;color:var(--accent);}
 .viz-stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
-.conv-bar-wrap{background:var(--surface);border-radius:4px;height:3px;margin-top:6px;overflow:hidden;display:none;}
+.conv-bar-wrap{background:var(--surface);border-radius:4px;height:3px;margin-top:6px;overflow:hidden;}
 .conv-bar{height:100%;background:var(--accent);border-radius:4px;transition:width 0.4s;}
 
-/* ── Thermo plot styles ────────────────────────────── */
+/* cache hit indicator */
+.cache-indicator{font-size:9px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:6px;}
+.cache-bar-wrap{flex:1;height:2px;background:var(--border);border-radius:2px;overflow:hidden;}
+.cache-bar{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;}
+
+/* Thermo */
 .thermo-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);}
 .thermo-tab{padding:7px 16px;font-family:var(--mono);font-size:10px;font-weight:700;
   letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;
@@ -247,14 +252,11 @@ select option{background:var(--surface);}
 .thermo-panel.active{display:block;}
 .chart-wrap{position:relative;height:240px;background:#04070d;border-radius:8px;
   border:1px solid var(--border);padding:12px;}
-
-/* ── NPT box note ──────────────────────────────────── */
 #npt-box-note{display:none;}
 </style>
 </head>
 <body>
 <div class="app">
-
 <header>
   <div>
     <div class="logo">Mol<span>Sim</span> Pipeline</div>
@@ -284,7 +286,7 @@ select option{background:var(--surface);}
   <button class="tab" onclick="switchTab(this,'tab-bank')">🧬 Molecule Bank</button>
 </div>
 
-<!-- ═══════════════ TAB: RUN ═══════════════ -->
+<!-- TAB: RUN -->
 <div class="tab-panel active" id="tab-run">
   <div class="stepper">
     <div class="step active" id="s1"><div class="step-num">1</div><div class="step-label">Molecules</div></div>
@@ -298,7 +300,7 @@ select option{background:var(--surface);}
     <div class="step" id="s5"><div class="step-num">5</div><div class="step-label">Results</div></div>
   </div>
 
-  <!-- Step 1: Molecules -->
+  <!-- Step 1 -->
   <div class="sub active" id="sub1">
     <div class="card">
       <div class="card-title">Select Molecules</div>
@@ -318,7 +320,7 @@ select option{background:var(--surface);}
       <button class="btn btn-primary" onclick="goStep(2)">Next: Choose Ensemble →</button></div>
   </div>
 
-  <!-- Step 2: Ensemble -->
+  <!-- Step 2 -->
   <div class="sub" id="sub2">
     <div class="card">
       <div class="card-title">Choose Ensemble</div>
@@ -346,15 +348,13 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- Step 3: Parameters -->
+  <!-- Step 3 -->
   <div class="sub" id="sub3">
     <div class="card">
       <div class="card-title">Simulation Parameters
         <span id="ens-badge" style="padding:3px 12px;border-radius:20px;font-size:10px;
           background:rgba(0,255,157,0.12);color:var(--accent);font-weight:700;"></span>
       </div>
-
-      <!-- BOX SIZE — label and tag change dynamically for NPT -->
       <div class="param-sec">
         <div class="param-sec-title" id="box-sec-title">
           📦 <span id="box-title-text">Simulation Box</span>
@@ -365,13 +365,10 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label id="box-y-label">Box Y (Å)</label><input type="number" id="box-y" value="50" min="1"></div>
           <div class="field" style="margin:0"><label id="box-z-label">Box Z (Å)</label><input type="number" id="box-z" value="50" min="1"></div>
         </div>
-        <!-- Shown only for NPT to explain that the box is NOT fixed -->
         <div id="npt-box-note" class="alert alert-warn" style="margin-top:14px;margin-bottom:0;">
-          ⚠ <span>In <strong>NPT</strong>, the simulation box volume is <strong>not fixed</strong> — it fluctuates to maintain the target pressure. These dimensions only define the <em>initial packing geometry</em> used by Packmol. LAMMPS will rescale the box freely during the run.</span>
+          ⚠ <span>In <strong>NPT</strong>, the simulation box volume is <strong>not fixed</strong> — it fluctuates to maintain the target pressure. These dimensions only define the <em>initial packing geometry</em> used by Packmol.</span>
         </div>
       </div>
-
-      <!-- TEMPERATURE — NVT and NPT only -->
       <div class="param-sec" id="sec-temp">
         <div class="param-sec-title">🌡️ Temperature <span class="ptag ptag-nvt" id="temp-tag">NVT / NPT</span></div>
         <div class="row2">
@@ -379,8 +376,6 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>End Temperature (K)</label><input type="number" id="temp-end" value="300" min="1"></div>
         </div>
       </div>
-
-      <!-- PRESSURE — NPT only -->
       <div class="param-sec" id="sec-press" style="display:none">
         <div class="param-sec-title">🔩 Pressure <span class="ptag ptag-npt">NPT ONLY</span></div>
         <div class="row2">
@@ -388,8 +383,6 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>End Pressure (atm)</label><input type="number" id="press-end" value="1.0" min="0" step="0.1"></div>
         </div>
       </div>
-
-      <!-- RUN PARAMETERS — all ensembles -->
       <div class="param-sec">
         <div class="param-sec-title">⏱️ Run Parameters <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
         <div class="row4">
@@ -406,7 +399,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- Step 4: Running -->
+  <!-- Step 4 -->
   <div class="sub" id="sub4">
     <div class="card">
       <div class="card-title">Pipeline Progress</div>
@@ -437,7 +430,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- Step 5: Results -->
+  <!-- Step 5 -->
   <div class="sub" id="sub5">
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="r-mols">—</div><div class="stat-lbl">Molecules</div></div>
@@ -461,12 +454,10 @@ select option{background:var(--surface);}
   </div>
 </div>
 
-<!-- ═══════════════ TAB: VISUALIZE ═══════════════ -->
+<!-- TAB: VISUALIZE -->
 <div class="tab-panel" id="tab-viz">
-
   <div class="card">
     <div class="card-title">3D Structure Viewer — NGL</div>
-
     <div class="viz-toolbar">
       <span class="viz-label">File</span>
       <button class="viz-btn active" id="vbtn-pdb"  onclick="vizLoadFile('pdb')">📦 packed.pdb</button>
@@ -494,33 +485,34 @@ select option{background:var(--surface);}
       <button class="viz-btn" onclick="nglToggleSpin()" id="spin-btn">↻ Spin</button>
       <button class="viz-btn" onclick="nglScreenshot()">📷 Screenshot</button>
     </div>
-
     <div id="ngl-viewport">
       <div class="ngl-empty" id="ngl-empty">
         <div class="ngl-empty-ico">⚗️</div>
         <div class="ngl-empty-text" id="ngl-empty-text">Run a simulation first, then load a structure file above.</div>
       </div>
     </div>
-
     <div id="frame-row" style="display:none" class="frame-row">
       <button class="viz-btn" id="play-btn" onclick="nglTogglePlay()">▶ Play</button>
       <input type="range" class="frame-slider" id="frame-slider"
-             min="0" max="0" value="0" oninput="nglSetFrame(parseInt(this.value))">
+             min="0" max="0" value="0" step="1" oninput="nglSetFrame(parseInt(this.value))">
       <span class="frame-label" id="frame-label">Frame 0 / 0</span>
       <select class="viz-select" id="speed-select" style="width:auto">
-        <option value="80">Fast</option>
-        <option value="160" selected>Normal</option>
+        <option value="60">Fast</option>
+        <option value="150" selected>Normal</option>
         <option value="350">Slow</option>
       </select>
     </div>
-
     <div id="conv-status" style="display:none;font-size:10px;color:var(--muted);margin-top:8px;">
       <span id="conv-msg">Extracting frames...</span>
-      <div class="conv-bar-wrap" id="conv-bar-wrap" style="display:block">
+      <div class="conv-bar-wrap" style="display:block;margin-top:4px;">
         <div class="conv-bar" id="conv-bar" style="width:0%"></div>
       </div>
     </div>
-
+    <!-- Cache indicator -->
+    <div class="cache-indicator" id="cache-indicator" style="display:none;">
+      <span id="cache-label">Cache: 0 frames</span>
+      <div class="cache-bar-wrap"><div class="cache-bar" id="cache-bar" style="width:0%"></div></div>
+    </div>
     <div class="viz-stat-row">
       <div class="viz-stat"><div class="viz-stat-val" id="vs-atoms">—</div><div class="viz-stat-lbl">Atoms</div></div>
       <div class="viz-stat"><div class="viz-stat-val" id="vs-frames">—</div><div class="viz-stat-lbl">Frames</div></div>
@@ -548,10 +540,9 @@ select option{background:var(--surface);}
       <div class="thermo-panel" id="tp-density"><div class="chart-wrap"><canvas id="chart-density"></canvas></div></div>
     </div>
   </div>
+</div>
 
-</div><!-- /tab-viz -->
-
-<!-- ═══════════════ TAB: BANK ═══════════════ -->
+<!-- TAB: BANK -->
 <div class="tab-panel" id="tab-bank">
   <div class="card">
     <div class="card-title">Molecule Library <span id="bank-count" style="color:var(--muted);font-weight:400;font-size:10px;"></span></div>
@@ -577,12 +568,10 @@ select option{background:var(--surface);}
     </div>
   </div>
 </div>
-
 </div><!-- /app -->
 
 <script>
 const API_BASE = "https://Madhavi3-molsim-backend.hf.space";
-
 let selectedMols = [];
 let allMolecules = [];
 let jobId        = null;
@@ -590,23 +579,26 @@ let pollTimer    = null;
 let logIdx       = 0;
 let ensemble     = "NVT";
 
-// ── NGL state ──────────────────────────────────────────────────────────────────
+// ── NGL state ─────────────────────────────────────────────────────────────────
 let nglStage     = null;
 let nglComponent = null;
 let nglSpinning  = false;
 let thermoCharts = {};
 
+// ── Traj state ─────────────────────────────────────────────────────────────────
 let traj = {
-  totalFrames:  0,
-  currentFrame: 0,
-  playing:      false,
-  playTimer:    null,
-  convPollTimer:null,
-  cache:        {},
-  prefetchQueue:[],
+  totalFrames:    0,
+  currentFrame:   0,
+  playing:        false,
+  playTimer:      null,
+  convPollTimer:  null,
+  coordCache:     {},   // idx -> Float32Array [x,y,z,...]
+  CACHE_SIZE:     30,
+  PREFETCH_AHEAD: 12,
+  prefetching:    new Set(),
 };
 
-// ── Init ───────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   document.getElementById('conn-url').textContent = API_BASE;
   checkHealth();
@@ -615,7 +607,7 @@ window.addEventListener('load', () => {
   initNGL();
 });
 
-// ── NGL Init ───────────────────────────────────────────────────────────────────
+// ── NGL Init ──────────────────────────────────────────────────────────────────
 function initNGL() {
   try {
     nglStage = new NGL.Stage("ngl-viewport", {
@@ -631,31 +623,36 @@ function initNGL() {
   }
 }
 
-// ── vizLoadFile ────────────────────────────────────────────────────────────────
+// ── vizLoadFile ───────────────────────────────────────────────────────────────
 async function vizLoadFile(type) {
   if (!jobId) {
     document.getElementById('ngl-empty-text').textContent =
-      "No completed job found. Run a simulation first.";
+      'No completed job found. Run a simulation first.';
     document.getElementById('ngl-empty').style.display = 'flex';
     return;
   }
-  if (!nglStage) { alert("NGL Viewer not initialized."); return; }
+  if (!nglStage) { alert('NGL Viewer not initialized.'); return; }
 
   document.querySelectorAll('[id^="vbtn-"]').forEach(b => b.classList.remove('active'));
   document.getElementById(`vbtn-${type}`).classList.add('active');
 
   nglStopPlay();
   clearInterval(traj.convPollTimer);
-  document.getElementById('frame-row').style.display   = 'none';
-  document.getElementById('conv-status').style.display = 'none';
+
+  document.getElementById('frame-row').style.display    = 'none';
+  document.getElementById('conv-status').style.display  = 'none';
+  document.getElementById('cache-indicator').style.display = 'none';
 
   showNglLoading(type === 'pdb' ? 'Loading packed.pdb...' : 'Checking trajectory...');
 
   if (nglStage) nglStage.removeAllComponents();
   nglComponent = null;
 
-  Object.values(traj.cache).forEach(u => URL.revokeObjectURL(u));
-  traj = { totalFrames:0, currentFrame:0, playing:false, playTimer:null, convPollTimer:null, cache:{}, prefetchQueue:[] };
+  // Clear traj state
+  traj.coordCache  = {};
+  traj.prefetching = new Set();
+  traj.totalFrames = 0;
+  traj.currentFrame = 0;
 
   if (type === 'pdb') {
     await loadStaticPdb();
@@ -664,19 +661,17 @@ async function vizLoadFile(type) {
   }
 }
 
-// ── Load static packed.pdb ─────────────────────────────────────────────────────
+// ── Load static packed.pdb ────────────────────────────────────────────────────
 async function loadStaticPdb() {
   try {
     const url   = `${API_BASE}/api/download/${jobId}/packed.pdb`;
     const rep   = document.getElementById('rep-select').value;
     const color = document.getElementById('color-select').value;
-
     nglComponent = await nglStage.loadFile(url, { ext: 'pdb', defaultRepresentation: false });
     nglComponent.addRepresentation(rep, { colorScheme: color });
     nglStage.autoView();
     hideNglLoading();
     document.getElementById('ngl-empty').style.display = 'none';
-
     const s = nglComponent.structure;
     document.getElementById('vs-atoms').textContent  = s ? s.atomCount.toLocaleString() : '—';
     document.getElementById('vs-res').textContent    = s ? s.residueCount.toLocaleString() : '—';
@@ -688,20 +683,150 @@ async function loadStaticPdb() {
   }
 }
 
-// ── Trajectory mode ────────────────────────────────────────────────────────────
+// ── Parse PDB text → Float32Array of [x,y,z,...] ─────────────────────────────
+function parsePdbCoords(text) {
+  const lines  = text.split('\n');
+  const coords = [];
+  for (const line of lines) {
+    if (line.startsWith('ATOM') || line.startsWith('HETATM')) {
+      const x = parseFloat(line.substring(30, 38));
+      const y = parseFloat(line.substring(38, 46));
+      const z = parseFloat(line.substring(46, 54));
+      if (!isNaN(x)) { coords.push(x, y, z); }
+    }
+  }
+  return new Float32Array(coords);
+}
+
+// ── Fetch one frame, store as Float32Array ────────────────────────────────────
+async function fetchFrameCoords(idx) {
+  if (traj.coordCache[idx]) return traj.coordCache[idx];
+
+  // If already in-flight, wait for it
+  if (traj.prefetching.has(idx)) {
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 50));
+      if (traj.coordCache[idx]) return traj.coordCache[idx];
+    }
+    return null;
+  }
+
+  traj.prefetching.add(idx);
+  try {
+    const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const text   = await r.text();
+    const coords = parsePdbCoords(text);
+    traj.coordCache[idx] = coords;
+    evictOldFrames(idx);
+    updateCacheIndicator();
+    return coords;
+  } catch(e) {
+    console.warn(`Frame ${idx} fetch failed:`, e.message);
+    return null;
+  } finally {
+    traj.prefetching.delete(idx);
+  }
+}
+
+// Evict frames far from current position
+function evictOldFrames(currentIdx) {
+  const keys = Object.keys(traj.coordCache).map(Number);
+  if (keys.length <= traj.CACHE_SIZE) return;
+  keys.sort((a, b) => Math.abs(a - currentIdx) - Math.abs(b - currentIdx));
+  for (const k of keys.slice(traj.CACHE_SIZE)) {
+    delete traj.coordCache[k];
+  }
+}
+
+// Prefetch frames ahead of current position (fire-and-forget)
+function prefetchAhead(fromIdx) {
+  const end = Math.min(fromIdx + traj.PREFETCH_AHEAD, traj.totalFrames - 1);
+  for (let i = fromIdx + 1; i <= end; i++) {
+    if (!traj.coordCache[i] && !traj.prefetching.has(i)) {
+      fetchFrameCoords(i); // intentionally not awaited
+    }
+  }
+}
+
+// ── Apply cached coords in-place to existing NGL component ───────────────────
+// This is the core speedup: no re-parse, no scene rebuild
+function applyCoords(coords) {
+  if (!nglComponent || !nglComponent.structure) return false;
+  const store = nglComponent.structure.atomStore;
+  if (!store || store.count * 3 !== coords.length) return false;
+  for (let i = 0; i < store.count; i++) {
+    store.x[i] = coords[i * 3];
+    store.y[i] = coords[i * 3 + 1];
+    store.z[i] = coords[i * 3 + 2];
+  }
+  nglComponent.structure.refreshPosition();
+  nglStage.viewer.requestRender();
+  return true;
+}
+
+// ── Load a frame — fast coord-swap path, fallback to full NGL load ────────────
+async function nglLoadFrame(idx, firstLoad = false) {
+  if (idx < 0 || idx >= traj.totalFrames) return;
+  traj.currentFrame = idx;
+  updateFrameLabel(idx);
+  prefetchAhead(idx);
+
+  const coords = await fetchFrameCoords(idx);
+  if (!coords) return;
+
+  // Fast path: swap coordinates in existing component
+  if (!firstLoad && nglComponent && applyCoords(coords)) {
+    return;
+  }
+
+  // First load: full NGL load to establish the scene
+  try {
+    const r    = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    if (nglStage) nglStage.removeAllComponents();
+    const rep   = document.getElementById('rep-select').value;
+    const color = document.getElementById('color-select').value;
+    nglComponent = await nglStage.loadFile(url, { ext: 'pdb', defaultRepresentation: false });
+    nglComponent.addRepresentation(rep, { colorScheme: color });
+    nglStage.autoView();
+    URL.revokeObjectURL(url);
+    const s = nglComponent.structure;
+    if (s) {
+      document.getElementById('vs-atoms').textContent = s.atomCount.toLocaleString();
+      document.getElementById('vs-res').textContent   = s.residueCount.toLocaleString();
+    }
+  } catch(e) {
+    console.warn('Full NGL frame load error:', e);
+  }
+}
+
+function updateFrameLabel(idx) {
+  const sl = document.getElementById('frame-slider');
+  if (sl) sl.value = idx;
+  const lbl = document.getElementById('frame-label');
+  if (lbl) lbl.textContent = `Frame ${idx} / ${traj.totalFrames - 1}`;
+}
+
+function updateCacheIndicator() {
+  const count = Object.keys(traj.coordCache).length;
+  const pct   = traj.totalFrames > 0 ? Math.min(100, (count / traj.totalFrames) * 100) : 0;
+  document.getElementById('cache-label').textContent = `Cache: ${count} / ${traj.totalFrames} frames`;
+  document.getElementById('cache-bar').style.width   = pct + '%';
+}
+
+// ── Trajectory mode ───────────────────────────────────────────────────────────
 async function startTrajMode() {
   document.getElementById('conv-status').style.display = 'block';
-  document.getElementById('conv-msg').textContent = 'Starting frame extraction...';
-  document.getElementById('conv-bar').style.width = '5%';
+  document.getElementById('conv-msg').textContent      = 'Starting frame extraction...';
+  document.getElementById('conv-bar').style.width      = '5%';
 
   try {
     const r = await fetch(`${API_BASE}/api/framecount/${jobId}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
-    if (d.status === 'ready') {
-      await onTrajReady(d);
-      return;
-    }
+    if (d.status === 'ready') { await onTrajReady(d); return; }
   } catch(e) {
     hideNglLoading();
     showNglError('Failed to start trajectory conversion: ' + e.message);
@@ -711,11 +836,9 @@ async function startTrajMode() {
   let dots = 0;
   traj.convPollTimer = setInterval(async () => {
     dots = (dots + 1) % 4;
-    document.getElementById('conv-msg').textContent =
-      'Extracting frames' + '.'.repeat(dots + 1);
+    document.getElementById('conv-msg').textContent = 'Extracting frames' + '.'.repeat(dots + 1);
     const curW = parseFloat(document.getElementById('conv-bar').style.width) || 5;
     if (curW < 90) document.getElementById('conv-bar').style.width = Math.min(curW + 3, 90) + '%';
-
     try {
       const r = await fetch(`${API_BASE}/api/framecount/${jobId}`);
       if (!r.ok) return;
@@ -723,11 +846,10 @@ async function startTrajMode() {
       if (d.status === 'ready') {
         clearInterval(traj.convPollTimer);
         await onTrajReady(d);
-      }
-      if (d.status === 'error') {
+      } else if (d.status === 'error') {
         clearInterval(traj.convPollTimer);
         hideNglLoading();
-        showNglError('Frame extraction failed on server. Check backend logs.');
+        showNglError('Frame extraction failed. Check backend logs.');
       }
     } catch(_) {}
   }, 1500);
@@ -735,105 +857,58 @@ async function startTrajMode() {
 
 async function onTrajReady(meta) {
   document.getElementById('conv-bar').style.width = '100%';
-  setTimeout(() => { document.getElementById('conv-status').style.display = 'none'; }, 600);
-
   traj.totalFrames  = meta.sampled_frames;
   traj.currentFrame = 0;
+  document.getElementById('vs-frames').textContent = traj.totalFrames;
+  document.getElementById('vs-atoms').textContent  = meta.atom_count.toLocaleString();
+  document.getElementById('vs-file').textContent   = 'trajectory';
+
+  // Warm cache: fetch first 5 frames in parallel before showing UI
+  document.getElementById('conv-msg').textContent = 'Pre-loading first frames...';
+  const warmCount = Math.min(5, traj.totalFrames);
+  await Promise.all(Array.from({length: warmCount}, (_, i) => fetchFrameCoords(i)));
+
+  document.getElementById('conv-status').style.display    = 'none';
+  document.getElementById('cache-indicator').style.display = 'flex';
 
   const sl = document.getElementById('frame-slider');
   sl.min   = 0;
   sl.max   = Math.max(0, traj.totalFrames - 1);
   sl.value = 0;
-  document.getElementById('frame-label').textContent = `Frame 0 / ${traj.totalFrames - 1}`;
-  document.getElementById('frame-row').style.display  = 'flex';
-
-  document.getElementById('vs-frames').textContent = traj.totalFrames;
-  document.getElementById('vs-atoms').textContent  = meta.atom_count.toLocaleString();
-  document.getElementById('vs-file').textContent   = 'trajectory';
+  updateFrameLabel(0);
+  document.getElementById('frame-row').style.display = 'flex';
 
   await nglLoadFrame(0, true);
   hideNglLoading();
   document.getElementById('ngl-empty').style.display = 'none';
-  prefetchFrame(1);
+
+  // Background prefetch frames 5..PREFETCH_AHEAD
+  prefetchAhead(0);
+  updateCacheIndicator();
 }
 
-// ── Per-frame loading ──────────────────────────────────────────────────────────
-async function nglLoadFrame(idx, firstLoad = false) {
-  if (idx < 0 || idx >= traj.totalFrames) return;
-  traj.currentFrame = idx;
-
-  const rep   = document.getElementById('rep-select').value;
-  const color = document.getElementById('color-select').value;
-
-  let blobUrl;
-  if (traj.cache[idx]) {
-    blobUrl = traj.cache[idx];
-  } else {
-    try {
-      const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const blob = await r.blob();
-      blobUrl = URL.createObjectURL(blob);
-      traj.cache[idx] = blobUrl;
-    } catch(e) {
-      console.warn(`Frame ${idx} fetch failed:`, e.message);
-      return;
-    }
-  }
-
-  const KEEP_WINDOW = 10;
-  for (const k of Object.keys(traj.cache)) {
-    const ki = parseInt(k);
-    if (Math.abs(ki - idx) > KEEP_WINDOW) {
-      URL.revokeObjectURL(traj.cache[k]);
-      delete traj.cache[k];
-    }
-  }
-
-  if (nglStage) nglStage.removeAllComponents();
-  try {
-    nglComponent = await nglStage.loadFile(blobUrl, { ext: 'pdb', defaultRepresentation: false });
-    nglComponent.addRepresentation(rep, { colorScheme: color });
-    if (firstLoad) nglStage.autoView();
-  } catch(e) {
-    console.warn("NGL frame load error:", e);
-  }
-
-  document.getElementById('frame-slider').value = idx;
-  document.getElementById('frame-label').textContent = `Frame ${idx} / ${traj.totalFrames - 1}`;
-
-  if (nglComponent && nglComponent.structure) {
-    document.getElementById('vs-res').textContent =
-      nglComponent.structure.residueCount.toLocaleString();
-  }
-
-  prefetchFrame(idx + 1);
-  prefetchFrame(idx + 2);
-}
-
-async function prefetchFrame(idx) {
-  if (idx < 0 || idx >= traj.totalFrames) return;
-  if (traj.cache[idx]) return;
-  try {
-    const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
-    if (!r.ok) return;
-    const blob = await r.blob();
-    traj.cache[idx] = URL.createObjectURL(blob);
-  } catch(_) {}
-}
-
-// ── Playback controls ──────────────────────────────────────────────────────────
+// ── Playback ──────────────────────────────────────────────────────────────────
 function nglTogglePlay() { traj.playing ? nglStopPlay() : nglStartPlay(); }
 
 function nglStartPlay() {
   if (traj.totalFrames < 2) return;
   traj.playing = true;
   document.getElementById('play-btn').textContent = '⏸ Pause';
-  const speedMs = parseInt(document.getElementById('speed-select').value) || 160;
+  const speedMs = parseInt(document.getElementById('speed-select').value) || 150;
+
   async function step() {
     if (!traj.playing) return;
     let next = traj.currentFrame + 1;
     if (next >= traj.totalFrames) next = 0;
+
+    // Adaptive: if target not cached, find nearest cached frame to avoid stall
+    if (!traj.coordCache[next] && traj.prefetching.size > 3) {
+      for (let i = 1; i < 6; i++) {
+        const candidate = (next + i) % traj.totalFrames;
+        if (traj.coordCache[candidate]) { next = candidate; break; }
+      }
+    }
+
     await nglLoadFrame(next);
     traj.playTimer = setTimeout(step, speedMs);
   }
@@ -848,9 +923,15 @@ function nglStopPlay() {
   if (btn) btn.textContent = '▶ Play';
 }
 
-function nglSetFrame(idx) { nglStopPlay(); nglLoadFrame(parseInt(idx)); }
+// Debounced slider — don't fire a fetch on every pixel of drag
+let _sliderDebounce = null;
+function nglSetFrame(idx) {
+  nglStopPlay();
+  clearTimeout(_sliderDebounce);
+  _sliderDebounce = setTimeout(() => nglLoadFrame(parseInt(idx)), 80);
+}
 
-// ── Representation / Color ─────────────────────────────────────────────────────
+// ── Representation / Color ────────────────────────────────────────────────────
 function changeRep(repName) {
   if (!nglComponent) return;
   nglComponent.removeAllRepresentations();
@@ -862,16 +943,14 @@ function changeColor(scheme) {
   nglComponent.addRepresentation(document.getElementById('rep-select').value, { colorScheme: scheme });
 }
 
-// ── NGL utils ──────────────────────────────────────────────────────────────────
+// ── NGL utils ─────────────────────────────────────────────────────────────────
 function nglCenter() { if (nglStage) nglStage.autoView(400); }
-
 function nglToggleSpin() {
   if (!nglStage) return;
   nglSpinning = !nglSpinning;
   nglStage.setSpin(nglSpinning ? [0,1,0] : null, nglSpinning ? 0.01 : 0);
   document.getElementById('spin-btn').classList.toggle('active', nglSpinning);
 }
-
 function nglScreenshot() {
   if (!nglStage) return;
   nglStage.makeImage({ factor: 2, antialias: true, trim: false, transparent: false })
@@ -882,7 +961,6 @@ function nglScreenshot() {
       a.click(); URL.revokeObjectURL(url);
     });
 }
-
 function showNglLoading(msg) {
   const vp = document.getElementById('ngl-viewport');
   let d = document.getElementById('ngl-loading-overlay');
@@ -904,7 +982,7 @@ function showNglError(msg) {
   document.getElementById('ngl-empty').style.display = 'flex';
 }
 
-// ── Thermo: Load and parse log.lammps ─────────────────────────────────────────
+// ── Thermo ────────────────────────────────────────────────────────────────────
 async function loadThermoData() {
   if (!jobId) { alert("No completed job."); return; }
   try {
@@ -915,12 +993,10 @@ async function loadThermoData() {
     alert("Failed to load log.lammps: " + e.message);
   }
 }
-
 function parseThermoLog(text) {
   const lines = text.split('\n');
   let headers = null;
   const data  = {};
-
   for (const line of lines) {
     const trimmed = line.trim();
     if (!headers && trimmed.startsWith('Step')) {
@@ -936,22 +1012,18 @@ function parseThermoLog(text) {
       if (trimmed.startsWith('Loop time')) headers = null;
     }
   }
-
   const steps = data['Step'] || [];
   if (!steps.length) { alert("Could not parse thermo data from log.lammps."); return; }
-
   document.getElementById('thermo-no-job').style.display  = 'none';
   document.getElementById('thermo-content').style.display = 'block';
   Object.values(thermoCharts).forEach(c => c.destroy());
   thermoCharts = {};
-
   const chartDefs = [
     { id: 'chart-temp',    key: 'Temp',    label: 'Temperature (K)',             color: '#ff6b35' },
     { id: 'chart-energy',  key: 'PotEng',  label: 'Potential Energy (kcal/mol)', color: '#a855f7' },
     { id: 'chart-press',   key: 'Press',   label: 'Pressure (atm)',              color: '#0066ff' },
     { id: 'chart-density', key: 'Density', label: 'Density (g/cm³)',             color: '#00ff9d' },
   ];
-
   chartDefs.forEach(({ id, key, label, color }) => {
     const yData = data[key];
     const ctx   = document.getElementById(id);
@@ -989,7 +1061,6 @@ function parseThermoLog(text) {
     });
   });
 }
-
 function switchThermo(btn, id) {
   document.querySelectorAll('.thermo-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -1000,14 +1071,13 @@ function switchThermo(btn, id) {
   const cid = map[id];
   if (thermoCharts[cid]) thermoCharts[cid].resize();
 }
-
 function openVizTab() {
   const tab = document.querySelector('[onclick*="tab-viz"]');
   if (tab) switchTab(tab, 'tab-viz');
   if (jobId) vizLoadFile('pdb');
 }
 
-// ── Tabs ───────────────────────────────────────────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────────────────────────
 function switchTab(btn, id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -1017,7 +1087,7 @@ function switchTab(btn, id) {
   if (id === 'tab-viz' && nglStage) nglStage.handleResize();
 }
 
-// ── Stepper ────────────────────────────────────────────────────────────────────
+// ── Stepper ───────────────────────────────────────────────────────────────────
 function goStep(n) {
   if (n === 2 && !selectedMols.length) { alert('Add at least one molecule first.'); return; }
   for (let i = 1; i <= 5; i++) {
@@ -1030,7 +1100,7 @@ function goStep(n) {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// ── Health ─────────────────────────────────────────────────────────────────────
+// ── Health ────────────────────────────────────────────────────────────────────
 async function checkHealth() {
   const b = document.getElementById('conn-badge');
   try {
@@ -1047,7 +1117,7 @@ async function checkHealth() {
   }
 }
 
-// ── Molecules ──────────────────────────────────────────────────────────────────
+// ── Molecules ─────────────────────────────────────────────────────────────────
 async function loadMolecules() {
   try {
     const r = await fetch(`${API_BASE}/api/molecules`);
@@ -1092,7 +1162,7 @@ function renderMolList() {
     </div>`).join('');
 }
 
-// ── Ensemble ───────────────────────────────────────────────────────────────────
+// ── Ensemble ──────────────────────────────────────────────────────────────────
 function selectEnsemble(ens) {
   ensemble = ens;
   ['NVT','NPT','NVE'].forEach(e => {
@@ -1101,40 +1171,27 @@ function selectEnsemble(ens) {
   });
   updateEnsembleParams();
 }
-
 function updateEnsembleParams() {
   const showTemp  = (ensemble === 'NVT' || ensemble === 'NPT');
   const showPress = (ensemble === 'NPT');
   const isNPT     = (ensemble === 'NPT');
-
   document.getElementById('sec-temp').style.display  = showTemp  ? 'block' : 'none';
   document.getElementById('sec-press').style.display = showPress ? 'block' : 'none';
   document.getElementById('ens-badge').textContent   = ensemble;
-
-  // ── Box section: dynamically relabel for NPT ──────────────────────────────
   document.getElementById('box-title-text').textContent = isNPT
-    ? 'Initial Box Size (Packmol only)'
-    : 'Simulation Box';
-
+    ? 'Initial Box Size (Packmol only)' : 'Simulation Box';
   const boxTag = document.getElementById('box-title-tag');
   if (isNPT) {
-    boxTag.textContent  = 'NPT — STARTING GEOMETRY ONLY';
-    boxTag.className    = 'ptag ptag-warn';
+    boxTag.textContent = 'NPT — STARTING GEOMETRY ONLY';
+    boxTag.className   = 'ptag ptag-warn';
   } else {
-    boxTag.textContent  = 'ALL ENSEMBLES';
-    boxTag.className    = 'ptag ptag-all';
+    boxTag.textContent = 'ALL ENSEMBLES';
+    boxTag.className   = 'ptag ptag-all';
   }
-
-  // Relabel the axis inputs too
-  const axisLabel = isNPT ? 'Initial X (Å)' : 'Box X (Å)';
   document.getElementById('box-x-label').textContent = isNPT ? 'Initial X (Å)' : 'Box X (Å)';
   document.getElementById('box-y-label').textContent = isNPT ? 'Initial Y (Å)' : 'Box Y (Å)';
   document.getElementById('box-z-label').textContent = isNPT ? 'Initial Z (Å)' : 'Box Z (Å)';
-
-  // Show/hide the NPT warning note
   document.getElementById('npt-box-note').style.display = isNPT ? 'flex' : 'none';
-
-  // Stage description
   const desc = {
     NVT: 'NVT — Nosé-Hoover thermostat, fixed volume',
     NPT: 'NPT — thermostat + barostat, volume fluctuates',
@@ -1144,14 +1201,13 @@ function updateEnsembleParams() {
   if (el) el.textContent = desc[ensemble];
 }
 
-// ── Launch ─────────────────────────────────────────────────────────────────────
+// ── Launch ────────────────────────────────────────────────────────────────────
 async function launch() {
   goStep(4);
   logIdx = 0;
   document.getElementById('log-body').innerHTML = '';
   setProgress(0);
   ['st-packmol','st-moltemplate','st-lammps','st-post'].forEach(id => setStage(id,'pending','Pending'));
-
   const sc = {
     ensemble,
     box_x:       parseFloat(document.getElementById('box-x').value)       || 50,
@@ -1170,7 +1226,6 @@ async function launch() {
     sc.press_start = parseFloat(document.getElementById('press-start').value) || 1.0;
     sc.press_end   = parseFloat(document.getElementById('press-end').value)   || 1.0;
   }
-
   addLog(`Ensemble : ${ensemble}`, 'step');
   addLog(ensemble === 'NPT'
     ? `Init box : ${sc.box_x} × ${sc.box_y} × ${sc.box_z} Å (Packmol only — volume will equilibrate)`
@@ -1178,7 +1233,6 @@ async function launch() {
   if (sc.temp_start !== undefined)  addLog(`Temp     : ${sc.temp_start} → ${sc.temp_end} K`);
   if (sc.press_start !== undefined) addLog(`Pressure : ${sc.press_start} → ${sc.press_end} atm`);
   addLog(`Steps    : ${sc.run_steps} | Timestep: ${sc.timestep} fs`);
-
   try {
     const r = await fetch(`${API_BASE}/api/run`, {
       method: 'POST',
@@ -1201,7 +1255,7 @@ async function launch() {
   }
 }
 
-// ── Polling ────────────────────────────────────────────────────────────────────
+// ── Polling ───────────────────────────────────────────────────────────────────
 function startPolling(jid) {
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
@@ -1224,7 +1278,6 @@ function startPolling(jid) {
     } catch(e) { addLog(`Polling error: ${e.message}`, 'warn'); }
   }, 2000);
 }
-
 function updateStages(stage, status) {
   const map   = {packmol:'st-packmol',moltemplate:'st-moltemplate',lammps:'st-lammps',post:'st-post'};
   const order = ['packmol','moltemplate','lammps','post'];
@@ -1267,7 +1320,7 @@ function reset() {
   renderMolList(); selectEnsemble('NVT'); goStep(1);
 }
 
-// ── Bank ───────────────────────────────────────────────────────────────────────
+// ── Bank ──────────────────────────────────────────────────────────────────────
 function renderBank() {
   const grid = document.getElementById('bank-grid');
   document.getElementById('bank-count').textContent =
