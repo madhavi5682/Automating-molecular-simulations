@@ -448,8 +448,7 @@ select option{background:var(--surface);}
     <div class="res-grid">
       <div class="res-card"><div class="res-icon">💾</div><div class="res-name">system.data</div><div class="res-desc">LAMMPS data file — atoms, bonds, angles</div><button class="btn-dl" onclick="dl('system.data')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📐</div><div class="res-name">run.in</div><div class="res-desc">Auto-generated LAMMPS run script</div><button class="btn-dl" onclick="dl('run.in')">⬇ Download</button></div>
-      <div class="res-card"><div class="res-icon">🎞️</div><div class="res-name">traj.lammpstrj</div><div class="res-desc">Raw trajectory — best for VMD / OVITO</div><button class="btn-dl" onclick="dl('traj.lammpstrj')">⬇ Download</button></div>
-      <div class="res-card"><div class="res-icon">🧭</div><div class="res-name">trajectory_browser.pdb</div><div class="res-desc">Exact full browser trajectory (generated on demand)</div><button class="btn-dl" onclick="dlBrowserTrajectory()">⬇ Download</button></div>
+      <div class="res-card"><div class="res-icon">🎞️</div><div class="res-name">traj.lammpstrj</div><div class="res-desc">Trajectory — open in VMD or OVITO</div><button class="btn-dl" onclick="dl('traj.lammpstrj')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📈</div><div class="res-name">log.lammps</div><div class="res-desc">Thermodynamic log — energy, temp, pressure</div><button class="btn-dl" onclick="dl('log.lammps')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">📦</div><div class="res-name">packed.pdb</div><div class="res-desc">Initial configuration from Packmol</div><button class="btn-dl" onclick="dl('packed.pdb')">⬇ Download</button></div>
       <div class="res-card"><div class="res-icon">🗂️</div><div class="res-name">results.zip</div><div class="res-desc">All output files bundled together</div><button class="btn-dl" onclick="dl('results.zip')">⬇ Download All</button></div>
@@ -471,7 +470,7 @@ select option{background:var(--surface);}
     <div class="viz-toolbar">
       <span class="viz-label">File</span>
       <button class="viz-btn active" id="vbtn-pdb"  onclick="vizLoadFile('pdb')">📦 packed.pdb</button>
-      <button class="viz-btn"        id="vbtn-traj" onclick="vizLoadFile('traj')">🎞 full trajectory</button>
+      <button class="viz-btn"        id="vbtn-traj" onclick="vizLoadFile('traj')">🎞 trajectory</button>
       <div class="viz-sep"></div>
       <span class="viz-label">Style</span>
       <select class="viz-select" id="rep-select" onchange="changeRep(this.value)">
@@ -591,20 +590,23 @@ let pollTimer    = null;
 let logIdx       = 0;
 let ensemble     = "NVT";
 
-let nglStage       = null;
-let nglComponent   = null;
-let nglSpinning    = false;
-let thermoCharts   = {};
+// ── NGL state ──────────────────────────────────────────────────────────────────
+let nglStage     = null;
+let nglComponent = null;
+let nglSpinning  = false;
+let thermoCharts = {};
 
 let traj = {
-  totalFrames: 0,
+  totalFrames:  0,
   currentFrame: 0,
-  playing: false,
-  playTimer: null,
-  trajectory: null,
-  trajectoryComponent: null,
+  playing:      false,
+  playTimer:    null,
+  convPollTimer:null,
+  cache:        {},
+  prefetchQueue:[],
 };
 
+// ── Init ───────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   document.getElementById('conn-url').textContent = API_BASE;
   checkHealth();
@@ -613,40 +615,23 @@ window.addEventListener('load', () => {
   initNGL();
 });
 
+// ── NGL Init ───────────────────────────────────────────────────────────────────
 function initNGL() {
   try {
     nglStage = new NGL.Stage("ngl-viewport", {
       backgroundColor: "#04070d",
-      quality: "medium",
-      impostor: true,
+      quality:         "medium",
+      impostor:        true,
     });
     window.addEventListener("resize", () => { if (nglStage) nglStage.handleResize(); });
-  } catch (e) {
+  } catch(e) {
     console.error("NGL init failed:", e);
     document.getElementById('ngl-empty-text').textContent =
       "NGL Viewer failed to initialize. Check console for details.";
   }
 }
 
-function resetTrajectoryState() {
-  nglStopPlay();
-  traj = {
-    totalFrames: 0,
-    currentFrame: 0,
-    playing: false,
-    playTimer: null,
-    trajectory: null,
-    trajectoryComponent: null,
-  };
-  const slider = document.getElementById('frame-slider');
-  slider.min = 0;
-  slider.max = 0;
-  slider.value = 0;
-  document.getElementById('frame-label').textContent = 'Frame 0 / 0';
-  document.getElementById('frame-row').style.display = 'none';
-  document.getElementById('conv-status').style.display = 'none';
-}
-
+// ── vizLoadFile ────────────────────────────────────────────────────────────────
 async function vizLoadFile(type) {
   if (!jobId) {
     document.getElementById('ngl-empty-text').textContent =
@@ -659,23 +644,31 @@ async function vizLoadFile(type) {
   document.querySelectorAll('[id^="vbtn-"]').forEach(b => b.classList.remove('active'));
   document.getElementById(`vbtn-${type}`).classList.add('active');
 
-  resetTrajectoryState();
-  showNglLoading(type === 'pdb' ? 'Loading packed.pdb...' : 'Preparing full trajectory...');
+  nglStopPlay();
+  clearInterval(traj.convPollTimer);
+  document.getElementById('frame-row').style.display   = 'none';
+  document.getElementById('conv-status').style.display = 'none';
+
+  showNglLoading(type === 'pdb' ? 'Loading packed.pdb...' : 'Checking trajectory...');
 
   if (nglStage) nglStage.removeAllComponents();
   nglComponent = null;
 
+  Object.values(traj.cache).forEach(u => URL.revokeObjectURL(u));
+  traj = { totalFrames:0, currentFrame:0, playing:false, playTimer:null, convPollTimer:null, cache:{}, prefetchQueue:[] };
+
   if (type === 'pdb') {
     await loadStaticPdb();
   } else {
-    await loadBrowserTrajectory();
+    await startTrajMode();
   }
 }
 
+// ── Load static packed.pdb ─────────────────────────────────────────────────────
 async function loadStaticPdb() {
   try {
-    const url = `${API_BASE}/api/download/${jobId}/packed.pdb`;
-    const rep = document.getElementById('rep-select').value;
+    const url   = `${API_BASE}/api/download/${jobId}/packed.pdb`;
+    const rep   = document.getElementById('rep-select').value;
     const color = document.getElementById('color-select').value;
 
     nglComponent = await nglStage.loadFile(url, { ext: 'pdb', defaultRepresentation: false });
@@ -689,99 +682,159 @@ async function loadStaticPdb() {
     document.getElementById('vs-res').textContent    = s ? s.residueCount.toLocaleString() : '—';
     document.getElementById('vs-frames').textContent = '1';
     document.getElementById('vs-file').textContent   = 'packed.pdb';
-  } catch (e) {
+  } catch(e) {
     hideNglLoading();
     showNglError('Failed to load packed.pdb: ' + e.message);
   }
 }
 
-async function loadBrowserTrajectory() {
-  const status = document.getElementById('conv-status');
-  const msg = document.getElementById('conv-msg');
-  const bar = document.getElementById('conv-bar');
-  status.style.display = 'block';
-  msg.textContent = 'Preparing exact browser trajectory...';
-  bar.style.width = '20%';
+// ── Trajectory mode ────────────────────────────────────────────────────────────
+async function startTrajMode() {
+  document.getElementById('conv-status').style.display = 'block';
+  document.getElementById('conv-msg').textContent = 'Starting frame extraction...';
+  document.getElementById('conv-bar').style.width = '5%';
 
   try {
-    const metaResp = await fetch(`${API_BASE}/api/trajectory/${jobId}/meta`);
-    if (!metaResp.ok) throw new Error(`HTTP ${metaResp.status}`);
-    const meta = await metaResp.json();
-    bar.style.width = '55%';
-
-    const rep = document.getElementById('rep-select').value;
-    const color = document.getElementById('color-select').value;
-    const url = `${API_BASE}/api/trajectory/${jobId}/browser.pdb`;
-
-    nglComponent = await nglStage.loadFile(url, {
-      ext: 'pdb',
-      asTrajectory: true,
-      defaultRepresentation: false,
-    });
-    nglComponent.addRepresentation(rep, { colorScheme: color });
-    nglStage.autoView();
-
-    traj.trajectoryComponent = (nglComponent.trajList && nglComponent.trajList[0]) || null;
-    traj.trajectory = traj.trajectoryComponent ? traj.trajectoryComponent.trajectory : null;
-    traj.totalFrames = meta.frame_count || (traj.trajectory ? traj.trajectory.frameCount : 0);
-    traj.currentFrame = 0;
-
-    document.getElementById('vs-atoms').textContent  = (meta.atom_count || (nglComponent.structure ? nglComponent.structure.atomCount : 0) || 0).toLocaleString();
-    document.getElementById('vs-res').textContent    = nglComponent.structure ? nglComponent.structure.residueCount.toLocaleString() : '—';
-    document.getElementById('vs-frames').textContent = String(traj.totalFrames || 0);
-    document.getElementById('vs-file').textContent   = meta.file || 'trajectory_browser.pdb';
-
-    const slider = document.getElementById('frame-slider');
-    slider.min = 0;
-    slider.max = Math.max(0, (traj.totalFrames || 1) - 1);
-    slider.value = 0;
-    document.getElementById('frame-label').textContent = `Frame 0 / ${Math.max(0, (traj.totalFrames || 1) - 1)}`;
-    document.getElementById('frame-row').style.display = traj.totalFrames > 1 ? 'flex' : 'none';
-
-    if (traj.trajectory && traj.totalFrames > 0) {
-      await setTrajectoryFrame(0);
-    }
-
-    bar.style.width = '100%';
-    hideNglLoading();
-    document.getElementById('ngl-empty').style.display = 'none';
-    setTimeout(() => { status.style.display = 'none'; }, 400);
-  } catch (e) {
-    hideNglLoading();
-    status.style.display = 'none';
-    showNglError('Failed to load trajectory: ' + e.message);
-  }
-}
-
-function setTrajectoryFrame(idx) {
-  return new Promise((resolve) => {
-    if (!traj.trajectory) {
-      resolve();
+    const r = await fetch(`${API_BASE}/api/framecount/${jobId}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (d.status === 'ready') {
+      await onTrajReady(d);
       return;
     }
-    idx = Math.max(0, Math.min(idx, traj.totalFrames - 1));
-    traj.currentFrame = idx;
-    traj.trajectory.setFrame(idx, () => {
-      document.getElementById('frame-slider').value = idx;
-      document.getElementById('frame-label').textContent = `Frame ${idx} / ${Math.max(0, traj.totalFrames - 1)}`;
-      resolve();
-    });
-  });
+  } catch(e) {
+    hideNglLoading();
+    showNglError('Failed to start trajectory conversion: ' + e.message);
+    return;
+  }
+
+  let dots = 0;
+  traj.convPollTimer = setInterval(async () => {
+    dots = (dots + 1) % 4;
+    document.getElementById('conv-msg').textContent =
+      'Extracting frames' + '.'.repeat(dots + 1);
+    const curW = parseFloat(document.getElementById('conv-bar').style.width) || 5;
+    if (curW < 90) document.getElementById('conv-bar').style.width = Math.min(curW + 3, 90) + '%';
+
+    try {
+      const r = await fetch(`${API_BASE}/api/framecount/${jobId}`);
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.status === 'ready') {
+        clearInterval(traj.convPollTimer);
+        await onTrajReady(d);
+      }
+      if (d.status === 'error') {
+        clearInterval(traj.convPollTimer);
+        hideNglLoading();
+        showNglError('Frame extraction failed on server. Check backend logs.');
+      }
+    } catch(_) {}
+  }, 1500);
 }
 
+async function onTrajReady(meta) {
+  document.getElementById('conv-bar').style.width = '100%';
+  setTimeout(() => { document.getElementById('conv-status').style.display = 'none'; }, 600);
+
+  traj.totalFrames  = meta.sampled_frames;
+  traj.currentFrame = 0;
+
+  const sl = document.getElementById('frame-slider');
+  sl.min   = 0;
+  sl.max   = Math.max(0, traj.totalFrames - 1);
+  sl.value = 0;
+  document.getElementById('frame-label').textContent = `Frame 0 / ${traj.totalFrames - 1}`;
+  document.getElementById('frame-row').style.display  = 'flex';
+
+  document.getElementById('vs-frames').textContent = traj.totalFrames;
+  document.getElementById('vs-atoms').textContent  = meta.atom_count.toLocaleString();
+  document.getElementById('vs-file').textContent   = 'trajectory';
+
+  await nglLoadFrame(0, true);
+  hideNglLoading();
+  document.getElementById('ngl-empty').style.display = 'none';
+  prefetchFrame(1);
+}
+
+// ── Per-frame loading ──────────────────────────────────────────────────────────
+async function nglLoadFrame(idx, firstLoad = false) {
+  if (idx < 0 || idx >= traj.totalFrames) return;
+  traj.currentFrame = idx;
+
+  const rep   = document.getElementById('rep-select').value;
+  const color = document.getElementById('color-select').value;
+
+  let blobUrl;
+  if (traj.cache[idx]) {
+    blobUrl = traj.cache[idx];
+  } else {
+    try {
+      const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const blob = await r.blob();
+      blobUrl = URL.createObjectURL(blob);
+      traj.cache[idx] = blobUrl;
+    } catch(e) {
+      console.warn(`Frame ${idx} fetch failed:`, e.message);
+      return;
+    }
+  }
+
+  const KEEP_WINDOW = 10;
+  for (const k of Object.keys(traj.cache)) {
+    const ki = parseInt(k);
+    if (Math.abs(ki - idx) > KEEP_WINDOW) {
+      URL.revokeObjectURL(traj.cache[k]);
+      delete traj.cache[k];
+    }
+  }
+
+  if (nglStage) nglStage.removeAllComponents();
+  try {
+    nglComponent = await nglStage.loadFile(blobUrl, { ext: 'pdb', defaultRepresentation: false });
+    nglComponent.addRepresentation(rep, { colorScheme: color });
+    if (firstLoad) nglStage.autoView();
+  } catch(e) {
+    console.warn("NGL frame load error:", e);
+  }
+
+  document.getElementById('frame-slider').value = idx;
+  document.getElementById('frame-label').textContent = `Frame ${idx} / ${traj.totalFrames - 1}`;
+
+  if (nglComponent && nglComponent.structure) {
+    document.getElementById('vs-res').textContent =
+      nglComponent.structure.residueCount.toLocaleString();
+  }
+
+  prefetchFrame(idx + 1);
+  prefetchFrame(idx + 2);
+}
+
+async function prefetchFrame(idx) {
+  if (idx < 0 || idx >= traj.totalFrames) return;
+  if (traj.cache[idx]) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
+    if (!r.ok) return;
+    const blob = await r.blob();
+    traj.cache[idx] = URL.createObjectURL(blob);
+  } catch(_) {}
+}
+
+// ── Playback controls ──────────────────────────────────────────────────────────
 function nglTogglePlay() { traj.playing ? nglStopPlay() : nglStartPlay(); }
 
 function nglStartPlay() {
-  if (!traj.trajectory || traj.totalFrames < 2) return;
+  if (traj.totalFrames < 2) return;
   traj.playing = true;
   document.getElementById('play-btn').textContent = '⏸ Pause';
-  const speedMs = parseInt(document.getElementById('speed-select').value, 10) || 160;
-
+  const speedMs = parseInt(document.getElementById('speed-select').value) || 160;
   async function step() {
     if (!traj.playing) return;
     let next = traj.currentFrame + 1;
     if (next >= traj.totalFrames) next = 0;
-    await setTrajectoryFrame(next);
+    await nglLoadFrame(next);
     traj.playTimer = setTimeout(step, speedMs);
   }
   step();
@@ -795,11 +848,9 @@ function nglStopPlay() {
   if (btn) btn.textContent = '▶ Play';
 }
 
-function nglSetFrame(idx) {
-  nglStopPlay();
-  setTrajectoryFrame(parseInt(idx, 10) || 0);
-}
+function nglSetFrame(idx) { nglStopPlay(); nglLoadFrame(parseInt(idx)); }
 
+// ── Representation / Color ─────────────────────────────────────────────────────
 function changeRep(repName) {
   if (!nglComponent) return;
   nglComponent.removeAllRepresentations();
@@ -811,12 +862,13 @@ function changeColor(scheme) {
   nglComponent.addRepresentation(document.getElementById('rep-select').value, { colorScheme: scheme });
 }
 
+// ── NGL utils ──────────────────────────────────────────────────────────────────
 function nglCenter() { if (nglStage) nglStage.autoView(400); }
 
 function nglToggleSpin() {
   if (!nglStage) return;
   nglSpinning = !nglSpinning;
-  nglStage.setSpin(nglSpinning ? [0, 1, 0] : null, nglSpinning ? 0.01 : 0);
+  nglStage.setSpin(nglSpinning ? [0,1,0] : null, nglSpinning ? 0.01 : 0);
   document.getElementById('spin-btn').classList.toggle('active', nglSpinning);
 }
 
@@ -826,10 +878,8 @@ function nglScreenshot() {
     .then(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `molsim_${jobId || 'structure'}.png`;
-      a.click();
-      URL.revokeObjectURL(url);
+      a.href = url; a.download = `molsim_${jobId || 'structure'}.png`;
+      a.click(); URL.revokeObjectURL(url);
     });
 }
 
@@ -854,143 +904,86 @@ function showNglError(msg) {
   document.getElementById('ngl-empty').style.display = 'flex';
 }
 
+// ── Thermo: Load and parse log.lammps ─────────────────────────────────────────
 async function loadThermoData() {
   if (!jobId) { alert("No completed job."); return; }
   try {
     const r = await fetch(`${API_BASE}/api/download/${jobId}/log.lammps`);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const text = await r.text();
     parseThermoLog(text);
-  } catch (e) {
+  } catch(e) {
     alert("Failed to load log.lammps: " + e.message);
   }
 }
 
 function parseThermoLog(text) {
-  const lines = text.split(/\r?\n/);
-  const blocks = [];
-  let current = null;
+  const lines = text.split('\n');
+  let headers = null;
+  const data  = {};
 
-  const isNumericToken = (token) => /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eEdD][+-]?\d+)?$/.test(token);
-  const parseNum = (token) => Number(token.replace(/d/ig, 'e'));
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    if (line.startsWith('Step')) {
-      if (current && current.rows.length) blocks.push(current);
-      current = { headers: line.split(/\s+/), rows: [] };
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!headers && trimmed.startsWith('Step')) {
+      headers = trimmed.split(/\s+/);
+      headers.forEach(h => data[h] = []);
       continue;
     }
-
-    if (!current) continue;
-
-    if (line.startsWith('Loop time') || line.startsWith('ERROR') || line.startsWith('WARNING:')) {
-      if (current.rows.length) blocks.push(current);
-      current = null;
-      continue;
-    }
-
-    const parts = line.split(/\s+/);
-    if (parts.length === current.headers.length && parts.every(isNumericToken)) {
-      current.rows.push(parts.map(parseNum));
+    if (headers) {
+      const parts = trimmed.split(/\s+/);
+      if (parts.length === headers.length && parts.every(p => !isNaN(p) && p !== '')) {
+        headers.forEach((h, i) => data[h].push(parseFloat(parts[i])));
+      }
+      if (trimmed.startsWith('Loop time')) headers = null;
     }
   }
-  if (current && current.rows.length) blocks.push(current);
-
-  if (!blocks.length) {
-    alert("Could not parse thermo data from log.lammps.");
-    return;
-  }
-
-  const scoreBlock = (block) => {
-    const h = new Set(block.headers);
-    let score = block.rows.length;
-    if (h.has('Temp')) score += 100000;
-    if (h.has('PotEng')) score += 100000;
-    if (h.has('Density')) score += 50000;
-    if (h.has('Press')) score += 20000;
-    if (h.has('KinEng')) score += 10000;
-    if (h.has('Step')) score += 1000;
-    return score;
-  };
-
-  const best = blocks.slice().sort((a, b) => scoreBlock(b) - scoreBlock(a))[0];
-  const data = {};
-  best.headers.forEach((header, idx) => {
-    data[header] = best.rows.map(row => row[idx]);
-  });
 
   const steps = data['Step'] || [];
-  if (!steps.length) {
-    alert("Could not find a production thermo block in log.lammps.");
-    return;
-  }
+  if (!steps.length) { alert("Could not parse thermo data from log.lammps."); return; }
 
-  document.getElementById('thermo-no-job').style.display = 'none';
+  document.getElementById('thermo-no-job').style.display  = 'none';
   document.getElementById('thermo-content').style.display = 'block';
   Object.values(thermoCharts).forEach(c => c.destroy());
   thermoCharts = {};
 
   const chartDefs = [
     { id: 'chart-temp',    key: 'Temp',    label: 'Temperature (K)',             color: '#ff6b35' },
-    { id: 'chart-energy',  key: 'PotEng',  label: 'Potential Energy',            color: '#a855f7' },
-    { id: 'chart-press',   key: 'Press',   label: 'Pressure',                    color: '#0066ff' },
-    { id: 'chart-density', key: 'Density', label: 'Density',                     color: '#00ff9d' },
+    { id: 'chart-energy',  key: 'PotEng',  label: 'Potential Energy (kcal/mol)', color: '#a855f7' },
+    { id: 'chart-press',   key: 'Press',   label: 'Pressure (atm)',              color: '#0066ff' },
+    { id: 'chart-density', key: 'Density', label: 'Density (g/cm³)',             color: '#00ff9d' },
   ];
 
   chartDefs.forEach(({ id, key, label, color }) => {
     const yData = data[key];
-    const ctx = document.getElementById(id);
-    const wrap = ctx.parentElement;
-    wrap.innerHTML = `<canvas id="${id}"></canvas>`;
-    const canvas = document.getElementById(id);
-
+    const ctx   = document.getElementById(id);
+    if (!ctx) return;
     if (!yData || !yData.length) {
-      wrap.innerHTML = `<div style="color:var(--muted);font-size:11px;display:flex;align-items:center;justify-content:center;height:100%">No "${key}" column in the selected production block.</div>`;
+      ctx.parentElement.innerHTML = `<div style="color:var(--muted);font-size:11px;
+        display:flex;align-items:center;justify-content:center;height:100%">
+        No "${key}" column in log.lammps for this ensemble.</div>`;
       return;
     }
-
-    thermoCharts[id] = new Chart(canvas, {
+    thermoCharts[id] = new Chart(ctx, {
       type: 'line',
       data: {
         labels: steps,
-        datasets: [{
-          label,
-          data: yData,
-          borderColor: color,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          tension: 0.15,
-          fill: true,
-          backgroundColor: color + '18',
-        }]
+        datasets: [{ label, data: yData, borderColor: color, borderWidth: 1.5,
+          pointRadius: 0, tension: 0.3, fill: true, backgroundColor: color + '18' }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        normalized: true,
+        responsive: true, maintainAspectRatio: false, animation: false,
         plugins: {
-          legend: { labels: { color: '#e6edf3', font: { family: 'IBM Plex Mono', size: 11 } } },
-          tooltip: {
-            backgroundColor: '#0d1117', borderColor: '#1a2535', borderWidth: 1,
-            titleColor: '#e6edf3', bodyColor: '#4a5568',
-            titleFont: { family: 'IBM Plex Mono' }, bodyFont: { family: 'IBM Plex Mono' }
-          }
+          legend: { labels: { color:'#e6edf3', font:{ family:'IBM Plex Mono', size:11 } } },
+          tooltip: { backgroundColor:'#0d1117', borderColor:'#1a2535', borderWidth:1,
+            titleColor:'#e6edf3', bodyColor:'#4a5568',
+            titleFont:{family:'IBM Plex Mono'}, bodyFont:{family:'IBM Plex Mono'} }
         },
         scales: {
-          x: {
-            ticks: { color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 }, maxTicksLimit: 8 },
-            grid: { color: '#1a2535' },
-            title: { display: true, text: 'Step', color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 } }
-          },
-          y: {
-            ticks: { color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 } },
-            grid: { color: '#1a2535' },
-            title: { display: true, text: label, color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 } }
-          }
+          x: { ticks:{color:'#4a5568',font:{family:'IBM Plex Mono',size:10},maxTicksLimit:8},
+               grid:{color:'#1a2535'},
+               title:{display:true,text:'Step',color:'#4a5568',font:{family:'IBM Plex Mono',size:10}} },
+          y: { ticks:{color:'#4a5568',font:{family:'IBM Plex Mono',size:10}},
+               grid:{color:'#1a2535'},
+               title:{display:true,text:label,color:'#4a5568',font:{family:'IBM Plex Mono',size:10}} }
         }
       }
     });
@@ -1002,7 +995,8 @@ function switchThermo(btn, id) {
   btn.classList.add('active');
   document.querySelectorAll('.thermo-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  const map = {'tp-temp':'chart-temp','tp-energy':'chart-energy','tp-press':'chart-press','tp-density':'chart-density'};
+  const map = {'tp-temp':'chart-temp','tp-energy':'chart-energy',
+               'tp-press':'chart-press','tp-density':'chart-density'};
   const cid = map[id];
   if (thermoCharts[cid]) thermoCharts[cid].resize();
 }
@@ -1013,6 +1007,7 @@ function openVizTab() {
   if (jobId) vizLoadFile('pdb');
 }
 
+// ── Tabs ───────────────────────────────────────────────────────────────────────
 function switchTab(btn, id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -1022,6 +1017,7 @@ function switchTab(btn, id) {
   if (id === 'tab-viz' && nglStage) nglStage.handleResize();
 }
 
+// ── Stepper ────────────────────────────────────────────────────────────────────
 function goStep(n) {
   if (n === 2 && !selectedMols.length) { alert('Add at least one molecule first.'); return; }
   for (let i = 1; i <= 5; i++) {
@@ -1031,13 +1027,14 @@ function goStep(n) {
     if (i < n) s.classList.add('done');
     else if (i === n) s.classList.add('active');
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
+// ── Health ─────────────────────────────────────────────────────────────────────
 async function checkHealth() {
   const b = document.getElementById('conn-badge');
   try {
-    const r = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(10000) });
+    const r = await fetch(`${API_BASE}/api/health`, {signal: AbortSignal.timeout(10000)});
     const d = await r.json();
     const ok = d.moltemplate && d.packmol && d.lammps;
     b.textContent = ok ? `⬤ Connected (${d.lt_files} lt · ${d.pdb_files} pdb)` : '⚠ Tools missing';
@@ -1050,34 +1047,32 @@ async function checkHealth() {
   }
 }
 
+// ── Molecules ──────────────────────────────────────────────────────────────────
 async function loadMolecules() {
   try {
     const r = await fetch(`${API_BASE}/api/molecules`);
     const d = await r.json();
     allMolecules = d.molecules || [];
-    populateDropdown();
-    renderBank();
-  } catch (e) {
-    console.error(e);
-  }
+    populateDropdown(); renderBank();
+  } catch(e) { console.error(e); }
 }
 function populateDropdown() {
-  const sel = document.getElementById('mol-select');
+  const sel   = document.getElementById('mol-select');
   const ready = allMolecules.filter(m => m.ready);
   sel.innerHTML = ready.length
-    ? '<option value="">-- select molecule --</option>' + ready.map(m => `<option value="${m.name}">${m.name}</option>`).join('')
+    ? '<option value="">-- select molecule --</option>' + ready.map(m =>
+        `<option value="${m.name}">${m.name}</option>`).join('')
     : '<option value="">No ready molecules — add via Molecule Bank</option>';
 }
 function addMol() {
-  const sel = document.getElementById('mol-select');
-  const count = parseInt(document.getElementById('mol-count').value, 10) || 100;
-  const name = sel.value;
+  const sel   = document.getElementById('mol-select');
+  const count = parseInt(document.getElementById('mol-count').value) || 100;
+  const name  = sel.value;
   if (!name) return;
   const existing = selectedMols.find(m => m.name === name);
   if (existing) existing.count = count;
-  else selectedMols.push({ name, count });
-  renderMolList();
-  sel.value = '';
+  else selectedMols.push({name, count});
+  renderMolList(); sel.value = '';
 }
 function removeMol(name) {
   selectedMols = selectedMols.filter(m => m.name !== name);
@@ -1097,6 +1092,7 @@ function renderMolList() {
     </div>`).join('');
 }
 
+// ── Ensemble ───────────────────────────────────────────────────────────────────
 function selectEnsemble(ens) {
   ensemble = ens;
   ['NVT','NPT','NVE'].forEach(e => {
@@ -1107,29 +1103,38 @@ function selectEnsemble(ens) {
 }
 
 function updateEnsembleParams() {
-  const showTemp = (ensemble === 'NVT' || ensemble === 'NPT');
+  const showTemp  = (ensemble === 'NVT' || ensemble === 'NPT');
   const showPress = (ensemble === 'NPT');
-  const isNPT = (ensemble === 'NPT');
+  const isNPT     = (ensemble === 'NPT');
 
-  document.getElementById('sec-temp').style.display = showTemp ? 'block' : 'none';
+  document.getElementById('sec-temp').style.display  = showTemp  ? 'block' : 'none';
   document.getElementById('sec-press').style.display = showPress ? 'block' : 'none';
-  document.getElementById('ens-badge').textContent = ensemble;
+  document.getElementById('ens-badge').textContent   = ensemble;
 
-  document.getElementById('box-title-text').textContent = isNPT ? 'Initial Box Size (Packmol only)' : 'Simulation Box';
+  // ── Box section: dynamically relabel for NPT ──────────────────────────────
+  document.getElementById('box-title-text').textContent = isNPT
+    ? 'Initial Box Size (Packmol only)'
+    : 'Simulation Box';
+
   const boxTag = document.getElementById('box-title-tag');
   if (isNPT) {
-    boxTag.textContent = 'NPT — STARTING GEOMETRY ONLY';
-    boxTag.className = 'ptag ptag-warn';
+    boxTag.textContent  = 'NPT — STARTING GEOMETRY ONLY';
+    boxTag.className    = 'ptag ptag-warn';
   } else {
-    boxTag.textContent = 'ALL ENSEMBLES';
-    boxTag.className = 'ptag ptag-all';
+    boxTag.textContent  = 'ALL ENSEMBLES';
+    boxTag.className    = 'ptag ptag-all';
   }
 
+  // Relabel the axis inputs too
+  const axisLabel = isNPT ? 'Initial X (Å)' : 'Box X (Å)';
   document.getElementById('box-x-label').textContent = isNPT ? 'Initial X (Å)' : 'Box X (Å)';
   document.getElementById('box-y-label').textContent = isNPT ? 'Initial Y (Å)' : 'Box Y (Å)';
   document.getElementById('box-z-label').textContent = isNPT ? 'Initial Z (Å)' : 'Box Z (Å)';
+
+  // Show/hide the NPT warning note
   document.getElementById('npt-box-note').style.display = isNPT ? 'flex' : 'none';
 
+  // Stage description
   const desc = {
     NVT: 'NVT — Nosé-Hoover thermostat, fixed volume',
     NPT: 'NPT — thermostat + barostat, volume fluctuates',
@@ -1139,6 +1144,7 @@ function updateEnsembleParams() {
   if (el) el.textContent = desc[ensemble];
 }
 
+// ── Launch ─────────────────────────────────────────────────────────────────────
 async function launch() {
   goStep(4);
   logIdx = 0;
@@ -1148,38 +1154,38 @@ async function launch() {
 
   const sc = {
     ensemble,
-    box_x: parseFloat(document.getElementById('box-x').value) || 50,
-    box_y: parseFloat(document.getElementById('box-y').value) || 50,
-    box_z: parseFloat(document.getElementById('box-z').value) || 50,
-    timestep: parseFloat(document.getElementById('timestep').value) || 1.0,
-    run_steps: parseInt(document.getElementById('run-steps').value, 10) || 100000,
-    thermo_freq: parseInt(document.getElementById('thermo-freq').value, 10) || 1000,
-    dump_freq: parseInt(document.getElementById('dump-freq').value, 10) || 1000,
+    box_x:       parseFloat(document.getElementById('box-x').value)       || 50,
+    box_y:       parseFloat(document.getElementById('box-y').value)       || 50,
+    box_z:       parseFloat(document.getElementById('box-z').value)       || 50,
+    timestep:    parseFloat(document.getElementById('timestep').value)    || 1.0,
+    run_steps:   parseInt  (document.getElementById('run-steps').value)   || 100000,
+    thermo_freq: parseInt  (document.getElementById('thermo-freq').value) || 1000,
+    dump_freq:   parseInt  (document.getElementById('dump-freq').value)   || 1000,
   };
   if (ensemble !== 'NVE') {
     sc.temp_start = parseFloat(document.getElementById('temp-start').value) || 300;
-    sc.temp_end = parseFloat(document.getElementById('temp-end').value) || 300;
+    sc.temp_end   = parseFloat(document.getElementById('temp-end').value)   || 300;
   }
   if (ensemble === 'NPT') {
     sc.press_start = parseFloat(document.getElementById('press-start').value) || 1.0;
-    sc.press_end = parseFloat(document.getElementById('press-end').value) || 1.0;
+    sc.press_end   = parseFloat(document.getElementById('press-end').value)   || 1.0;
   }
 
   addLog(`Ensemble : ${ensemble}`, 'step');
   addLog(ensemble === 'NPT'
     ? `Init box : ${sc.box_x} × ${sc.box_y} × ${sc.box_z} Å (Packmol only — volume will equilibrate)`
     : `Box      : ${sc.box_x} × ${sc.box_y} × ${sc.box_z} Å`);
-  if (sc.temp_start !== undefined) addLog(`Temp     : ${sc.temp_start} → ${sc.temp_end} K`);
+  if (sc.temp_start !== undefined)  addLog(`Temp     : ${sc.temp_start} → ${sc.temp_end} K`);
   if (sc.press_start !== undefined) addLog(`Pressure : ${sc.press_start} → ${sc.press_end} atm`);
   addLog(`Steps    : ${sc.run_steps} | Timestep: ${sc.timestep} fs`);
 
   try {
     const r = await fetch(`${API_BASE}/api/run`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        molecules: selectedMols,
-        box: { x: sc.box_x, y: sc.box_y, z: sc.box_z, tolerance: 2.0 },
+        molecules:  selectedMols,
+        box:        {x: sc.box_x, y: sc.box_y, z: sc.box_z, tolerance: 2.0},
         sim_config: sc,
       }),
     });
@@ -1190,69 +1196,64 @@ async function launch() {
     document.getElementById('log-live').textContent = '● live';
     document.getElementById('log-live').style.color = 'var(--accent)';
     startPolling(jobId);
-  } catch (e) {
+  } catch(e) {
     addLog(`Failed to start: ${e.message}`, 'error');
   }
 }
 
+// ── Polling ────────────────────────────────────────────────────────────────────
 function startPolling(jid) {
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     try {
       const r = await fetch(`${API_BASE}/api/status/${jid}?since_log=${logIdx}`);
       const d = await r.json();
-      for (const line of (d.log || [])) { addLog(line.msg, line.level || 'info'); logIdx++; }
+      for (const line of (d.log||[])) { addLog(line.msg, line.level||'info'); logIdx++; }
       setProgress(d.progress || 0);
       updateStages(d.stage, d.status);
       if (d.status === 'done') {
         clearInterval(pollTimer);
         document.getElementById('log-live').textContent = '✓ complete';
-        showResults();
-        setTimeout(() => goStep(5), 800);
+        showResults(); setTimeout(() => goStep(5), 800);
       } else if (d.status === 'error') {
         clearInterval(pollTimer);
         document.getElementById('log-live').textContent = '✗ error';
         document.getElementById('log-live').style.color = 'var(--orange)';
         addLog(`Error: ${d.error}`, 'error');
       }
-    } catch (e) {
-      addLog(`Polling error: ${e.message}`, 'warn');
-    }
+    } catch(e) { addLog(`Polling error: ${e.message}`, 'warn'); }
   }, 2000);
 }
 
 function updateStages(stage, status) {
-  const map = { packmol:'st-packmol', moltemplate:'st-moltemplate', lammps:'st-lammps', post:'st-post' };
+  const map   = {packmol:'st-packmol',moltemplate:'st-moltemplate',lammps:'st-lammps',post:'st-post'};
   const order = ['packmol','moltemplate','lammps','post'];
-  const idx = order.indexOf(stage);
-  order.forEach((s, i) => {
-    if (i < idx) setStage(map[s], 'done', '✓ Done');
-    else if (s === stage) setStage(map[s], status === 'error' ? 'error' : 'running', status === 'error' ? '✗ Error' : '● Running');
+  const idx   = order.indexOf(stage);
+  order.forEach((s,i) => {
+    if (i < idx) setStage(map[s],'done','✓ Done');
+    else if (s === stage) setStage(map[s], status==='error'?'error':'running',
+                                   status==='error'?'✗ Error':'● Running');
   });
 }
 function showResults() {
-  document.getElementById('r-mols').textContent = selectedMols.reduce((a, m) => a + m.count, 0).toLocaleString();
-  document.getElementById('r-ens').textContent = ensemble;
-  document.getElementById('r-job').textContent = jobId;
+  document.getElementById('r-mols').textContent   = selectedMols.reduce((a,m)=>a+m.count,0).toLocaleString();
+  document.getElementById('r-ens').textContent    = ensemble;
+  document.getElementById('r-job').textContent    = jobId;
   document.getElementById('r-status').textContent = '✓';
 }
 function dl(fname) {
   if (!jobId) return alert('No completed job.');
   window.open(`${API_BASE}/api/download/${jobId}/${fname}`, '_blank');
 }
-function dlBrowserTrajectory() {
-  if (!jobId) return alert('No completed job.');
-  window.open(`${API_BASE}/api/trajectory/${jobId}/browser.pdb`, '_blank');
-}
 function addLog(msg, level='info') {
   const b = document.getElementById('log-body');
-  const ts = new Date().toLocaleTimeString('en', { hour12: false });
+  const ts = new Date().toLocaleTimeString('en',{hour12:false});
   b.innerHTML += `<div class="l-${level}">[${ts}] ${msg}</div>`;
   b.scrollTop = b.scrollHeight;
 }
 function setProgress(pct) {
-  document.getElementById('prog-bar').style.width = pct + '%';
-  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-bar').style.width = pct+'%';
+  document.getElementById('prog-pct').textContent = pct+'%';
 }
 function setStage(id, state, label) {
   const el = document.getElementById(id);
@@ -1261,30 +1262,25 @@ function setStage(id, state, label) {
   el.querySelector('.stage-stat').textContent = label;
 }
 function reset() {
-  selectedMols = [];
-  jobId = null;
-  logIdx = 0;
-  ensemble = 'NVT';
+  selectedMols=[]; jobId=null; logIdx=0; ensemble='NVT';
   if (pollTimer) clearInterval(pollTimer);
-  resetTrajectoryState();
-  renderMolList();
-  selectEnsemble('NVT');
-  goStep(1);
+  renderMolList(); selectEnsemble('NVT'); goStep(1);
 }
 
+// ── Bank ───────────────────────────────────────────────────────────────────────
 function renderBank() {
   const grid = document.getElementById('bank-grid');
-  document.getElementById('bank-count').textContent = `(${allMolecules.length} total · ${allMolecules.filter(m => m.ready).length} ready)`;
+  document.getElementById('bank-count').textContent =
+    `(${allMolecules.length} total · ${allMolecules.filter(m=>m.ready).length} ready)`;
   if (!allMolecules.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:11px;grid-column:1/-1">No molecules found.</div>';
-    return;
+    grid.innerHTML='<div style="color:var(--muted);font-size:11px;grid-column:1/-1">No molecules found.</div>'; return;
   }
-  grid.innerHTML = allMolecules.map(m => `
-    <div class="mol-card ${m.ready ? 'ready' : ''}">
+  grid.innerHTML = allMolecules.map(m=>`
+    <div class="mol-card ${m.ready?'ready':''}">
       <div class="mol-card-name">${m.name}</div>
       <div class="mol-card-tags">
-        <span class="tag ${m.has_pdb ? 'tag-ok' : 'tag-miss'}">.pdb ${m.has_pdb ? '✓' : '✗'}</span>
-        <span class="tag ${m.has_lt ? 'tag-ok' : 'tag-miss'}">.lt ${m.has_lt ? '✓' : '✗'}</span>
+        <span class="tag ${m.has_pdb?'tag-ok':'tag-miss'}">.pdb ${m.has_pdb?'✓':'✗'}</span>
+        <span class="tag ${m.has_lt?'tag-ok':'tag-miss'}">.lt ${m.has_lt?'✓':'✗'}</span>
       </div>
       <button class="mol-card-del" onclick="bankDel('${m.name}')">🗑 Delete</button>
     </div>`).join('');
@@ -1296,39 +1292,34 @@ function markUpload(input, statusId) {
 }
 async function bankAdd() {
   const name = document.getElementById('bank-name').value.trim().toLowerCase();
-  const pdb = document.getElementById('bank-pdb').files[0];
-  const lt = document.getElementById('bank-lt').files[0];
+  const pdb  = document.getElementById('bank-pdb').files[0];
+  const lt   = document.getElementById('bank-lt').files[0];
   if (!name) return alert('Enter a molecule name.');
   if (!pdb && !lt) return alert('Upload at least one file.');
   const btn = document.getElementById('bank-add-btn');
-  btn.innerHTML = '<span class="spinner"></span> Uploading...';
-  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Uploading...'; btn.disabled = true;
   const form = new FormData();
   form.append('name', name);
   if (pdb) form.append('pdb_file', pdb, pdb.name);
-  if (lt) form.append('lt_file', lt, lt.name);
+  if (lt)  form.append('lt_file',  lt,  lt.name);
   try {
-    const r = await fetch(`${API_BASE}/api/molecules/upload`, { method: 'POST', body: form });
+    const r = await fetch(`${API_BASE}/api/molecules/upload`,{method:'POST',body:form});
     const d = await r.json();
     if (d.name) {
-      document.getElementById('bank-name').value = '';
-      document.getElementById('bank-pdb').value = '';
-      document.getElementById('bank-lt').value = '';
-      document.getElementById('bank-pdb-status').innerHTML = '';
-      document.getElementById('bank-lt-status').innerHTML = '';
+      document.getElementById('bank-name').value='';
+      document.getElementById('bank-pdb').value='';
+      document.getElementById('bank-lt').value='';
+      document.getElementById('bank-pdb-status').innerHTML='';
+      document.getElementById('bank-lt-status').innerHTML='';
       await loadMolecules();
-    } else alert('Upload failed: ' + JSON.stringify(d));
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    btn.innerHTML = '+ Add to Bank';
-    btn.disabled = false;
-  }
+    } else alert('Upload failed: '+JSON.stringify(d));
+  } catch(e) { alert('Error: '+e.message); }
+  finally { btn.innerHTML='+ Add to Bank'; btn.disabled=false; }
 }
 async function bankDel(name) {
   if (!confirm(`Delete "${name}"?`)) return;
-  try { await fetch(`${API_BASE}/api/molecules/${name}`, { method: 'DELETE' }); await loadMolecules(); }
-  catch (e) { alert('Delete failed: ' + e.message); }
+  try { await fetch(`${API_BASE}/api/molecules/${name}`,{method:'DELETE'}); await loadMolecules(); }
+  catch(e) { alert('Delete failed: '+e.message); }
 }
 </script>
 </body>
