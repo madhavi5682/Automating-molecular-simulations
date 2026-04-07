@@ -198,7 +198,7 @@ select option{background:var(--surface);}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-/* NGL Viewer */
+/* ── NGL Viewer styles ─────────────────────────────── */
 #ngl-viewport{width:100%;height:420px;background:#04070d;border-radius:8px;
   border:1px solid var(--border);position:relative;overflow:hidden;}
 .viz-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
@@ -233,20 +233,10 @@ select option{background:var(--surface);}
   padding:10px;text-align:center;}
 .viz-stat-val{font-family:var(--display);font-size:16px;font-weight:700;color:var(--accent);}
 .viz-stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
-
-/* Prefetch progress bar */
-.prefetch-wrap{display:flex;align-items:center;gap:10px;margin-top:8px;}
-.prefetch-bar-bg{flex:1;background:var(--surface);border:1px solid var(--border);
-  border-radius:100px;height:4px;overflow:hidden;}
-.prefetch-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--accent));
-  border-radius:100px;transition:width 0.3s ease;width:0%;}
-.prefetch-lbl{font-size:10px;color:var(--muted);min-width:120px;text-align:right;}
-
-/* Conv status */
 .conv-bar-wrap{background:var(--surface);border-radius:4px;height:3px;margin-top:6px;overflow:hidden;display:none;}
 .conv-bar{height:100%;background:var(--accent);border-radius:4px;transition:width 0.4s;}
 
-/* Thermo */
+/* ── Thermo plot styles ────────────────────────────── */
 .thermo-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);}
 .thermo-tab{padding:7px 16px;font-family:var(--mono);font-size:10px;font-weight:700;
   letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;
@@ -258,6 +248,7 @@ select option{background:var(--surface);}
 .chart-wrap{position:relative;height:240px;background:#04070d;border-radius:8px;
   border:1px solid var(--border);padding:12px;}
 
+/* ── NPT box note ──────────────────────────────────── */
 #npt-box-note{display:none;}
 </style>
 </head>
@@ -293,7 +284,7 @@ select option{background:var(--surface);}
   <button class="tab" onclick="switchTab(this,'tab-bank')">🧬 Molecule Bank</button>
 </div>
 
-<!-- TAB: RUN -->
+<!-- ═══════════════ TAB: RUN ═══════════════ -->
 <div class="tab-panel active" id="tab-run">
   <div class="stepper">
     <div class="step active" id="s1"><div class="step-num">1</div><div class="step-label">Molecules</div></div>
@@ -307,7 +298,7 @@ select option{background:var(--surface);}
     <div class="step" id="s5"><div class="step-num">5</div><div class="step-label">Results</div></div>
   </div>
 
-  <!-- Step 1 -->
+  <!-- Step 1: Molecules -->
   <div class="sub active" id="sub1">
     <div class="card">
       <div class="card-title">Select Molecules</div>
@@ -327,7 +318,7 @@ select option{background:var(--surface);}
       <button class="btn btn-primary" onclick="goStep(2)">Next: Choose Ensemble →</button></div>
   </div>
 
-  <!-- Step 2 -->
+  <!-- Step 2: Ensemble -->
   <div class="sub" id="sub2">
     <div class="card">
       <div class="card-title">Choose Ensemble</div>
@@ -355,13 +346,15 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- Step 3 -->
+  <!-- Step 3: Parameters -->
   <div class="sub" id="sub3">
     <div class="card">
       <div class="card-title">Simulation Parameters
         <span id="ens-badge" style="padding:3px 12px;border-radius:20px;font-size:10px;
           background:rgba(0,255,157,0.12);color:var(--accent);font-weight:700;"></span>
       </div>
+
+      <!-- BOX SIZE — label and tag change dynamically for NPT -->
       <div class="param-sec">
         <div class="param-sec-title" id="box-sec-title">
           📦 <span id="box-title-text">Simulation Box</span>
@@ -372,10 +365,13 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label id="box-y-label">Box Y (Å)</label><input type="number" id="box-y" value="50" min="1"></div>
           <div class="field" style="margin:0"><label id="box-z-label">Box Z (Å)</label><input type="number" id="box-z" value="50" min="1"></div>
         </div>
+        <!-- Shown only for NPT to explain that the box is NOT fixed -->
         <div id="npt-box-note" class="alert alert-warn" style="margin-top:14px;margin-bottom:0;">
-          ⚠ <span>In <strong>NPT</strong>, the simulation box volume is <strong>not fixed</strong> — it fluctuates to maintain the target pressure. These dimensions only define the <em>initial packing geometry</em> used by Packmol.</span>
+          ⚠ <span>In <strong>NPT</strong>, the simulation box volume is <strong>not fixed</strong> — it fluctuates to maintain the target pressure. These dimensions only define the <em>initial packing geometry</em> used by Packmol. LAMMPS will rescale the box freely during the run.</span>
         </div>
       </div>
+
+      <!-- TEMPERATURE — NVT and NPT only -->
       <div class="param-sec" id="sec-temp">
         <div class="param-sec-title">🌡️ Temperature <span class="ptag ptag-nvt" id="temp-tag">NVT / NPT</span></div>
         <div class="row2">
@@ -383,6 +379,8 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>End Temperature (K)</label><input type="number" id="temp-end" value="300" min="1"></div>
         </div>
       </div>
+
+      <!-- PRESSURE — NPT only -->
       <div class="param-sec" id="sec-press" style="display:none">
         <div class="param-sec-title">🔩 Pressure <span class="ptag ptag-npt">NPT ONLY</span></div>
         <div class="row2">
@@ -390,6 +388,8 @@ select option{background:var(--surface);}
           <div class="field" style="margin:0"><label>End Pressure (atm)</label><input type="number" id="press-end" value="1.0" min="0" step="0.1"></div>
         </div>
       </div>
+
+      <!-- RUN PARAMETERS — all ensembles -->
       <div class="param-sec">
         <div class="param-sec-title">⏱️ Run Parameters <span class="ptag ptag-all">ALL ENSEMBLES</span></div>
         <div class="row4">
@@ -406,7 +406,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- Step 4 -->
+  <!-- Step 4: Running -->
   <div class="sub" id="sub4">
     <div class="card">
       <div class="card-title">Pipeline Progress</div>
@@ -437,7 +437,7 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-  <!-- Step 5 -->
+  <!-- Step 5: Results -->
   <div class="sub" id="sub5">
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="r-mols">—</div><div class="stat-lbl">Molecules</div></div>
@@ -461,7 +461,7 @@ select option{background:var(--surface);}
   </div>
 </div>
 
-<!-- TAB: VISUALIZE -->
+<!-- ═══════════════ TAB: VISUALIZE ═══════════════ -->
 <div class="tab-panel" id="tab-viz">
 
   <div class="card">
@@ -502,27 +502,18 @@ select option{background:var(--surface);}
       </div>
     </div>
 
-    <!-- Playback controls (trajectory only) -->
     <div id="frame-row" style="display:none" class="frame-row">
       <button class="viz-btn" id="play-btn" onclick="nglTogglePlay()">▶ Play</button>
       <input type="range" class="frame-slider" id="frame-slider"
-             min="0" max="0" value="0" oninput="nglSeek(parseInt(this.value))">
+             min="0" max="0" value="0" oninput="nglSetFrame(parseInt(this.value))">
       <span class="frame-label" id="frame-label">Frame 0 / 0</span>
-      <select class="viz-select" id="speed-select" style="width:auto" onchange="updateSpeed()">
-        <option value="40">Fastest</option>
-        <option value="80" selected>Fast</option>
-        <option value="160">Normal</option>
+      <select class="viz-select" id="speed-select" style="width:auto">
+        <option value="80">Fast</option>
+        <option value="160" selected>Normal</option>
         <option value="350">Slow</option>
       </select>
     </div>
 
-    <!-- Prefetch progress bar (shown while buffering before first play) -->
-    <div id="prefetch-row" style="display:none" class="prefetch-wrap">
-      <div class="prefetch-bar-bg"><div class="prefetch-bar" id="prefetch-bar"></div></div>
-      <span class="prefetch-lbl" id="prefetch-lbl">Buffering 0 / 0 frames</span>
-    </div>
-
-    <!-- Conv status (frame extraction on server) -->
     <div id="conv-status" style="display:none;font-size:10px;color:var(--muted);margin-top:8px;">
       <span id="conv-msg">Extracting frames...</span>
       <div class="conv-bar-wrap" id="conv-bar-wrap" style="display:block">
@@ -558,9 +549,9 @@ select option{background:var(--surface);}
     </div>
   </div>
 
-</div>
+</div><!-- /tab-viz -->
 
-<!-- TAB: BANK -->
+<!-- ═══════════════ TAB: BANK ═══════════════ -->
 <div class="tab-panel" id="tab-bank">
   <div class="card">
     <div class="card-title">Molecule Library <span id="bank-count" style="color:var(--muted);font-weight:400;font-size:10px;"></span></div>
@@ -605,21 +596,14 @@ let nglComponent = null;
 let nglSpinning  = false;
 let thermoCharts = {};
 
-// ── Trajectory state ───────────────────────────────────────────────────────────
-// All trajectory logic lives here. No other variables are needed.
 let traj = {
-  totalFrames:   0,
-  currentFrame:  0,
-  playing:       false,
-  rafHandle:     null,
-  lastRenderTs:  0,
-  msPerFrame:    80,         // controlled by speed-select
-  convPollTimer: null,
-  cache:         {},         // idx → blob URL string
-  prefetching:   new Set(),  // idxs currently in-flight
-  CACHE_WINDOW:  20,         // keep ±20 frames around current in memory
-  PREFETCH_AHEAD: 12,        // how many frames to fetch ahead during playback
-  INIT_BATCH:    15,         // frames to fetch before showing play button
+  totalFrames:  0,
+  currentFrame: 0,
+  playing:      false,
+  playTimer:    null,
+  convPollTimer:null,
+  cache:        {},
+  prefetchQueue:[],
 };
 
 // ── Init ───────────────────────────────────────────────────────────────────────
@@ -647,7 +631,7 @@ function initNGL() {
   }
 }
 
-// ── vizLoadFile entry point ────────────────────────────────────────────────────
+// ── vizLoadFile ────────────────────────────────────────────────────────────────
 async function vizLoadFile(type) {
   if (!jobId) {
     document.getElementById('ngl-empty-text').textContent =
@@ -657,56 +641,27 @@ async function vizLoadFile(type) {
   }
   if (!nglStage) { alert("NGL Viewer not initialized."); return; }
 
-  // Toggle active button
   document.querySelectorAll('[id^="vbtn-"]').forEach(b => b.classList.remove('active'));
   document.getElementById(`vbtn-${type}`).classList.add('active');
 
-  // Stop any existing playback and wipe state
-  trajReset();
+  nglStopPlay();
+  clearInterval(traj.convPollTimer);
+  document.getElementById('frame-row').style.display   = 'none';
+  document.getElementById('conv-status').style.display = 'none';
 
   showNglLoading(type === 'pdb' ? 'Loading packed.pdb...' : 'Checking trajectory...');
+
+  if (nglStage) nglStage.removeAllComponents();
+  nglComponent = null;
+
+  Object.values(traj.cache).forEach(u => URL.revokeObjectURL(u));
+  traj = { totalFrames:0, currentFrame:0, playing:false, playTimer:null, convPollTimer:null, cache:{}, prefetchQueue:[] };
 
   if (type === 'pdb') {
     await loadStaticPdb();
   } else {
     await startTrajMode();
   }
-}
-
-// ── Reset all trajectory state and UI ─────────────────────────────────────────
-function trajReset() {
-  // Stop playback
-  if (traj.rafHandle) cancelAnimationFrame(traj.rafHandle);
-  if (traj.convPollTimer) clearInterval(traj.convPollTimer);
-
-  // Revoke all cached blob URLs to free memory
-  Object.values(traj.cache).forEach(u => { try { URL.revokeObjectURL(u); } catch(_){} });
-
-  traj = {
-    totalFrames:   0,
-    currentFrame:  0,
-    playing:       false,
-    rafHandle:     null,
-    lastRenderTs:  0,
-    msPerFrame:    parseInt(document.getElementById('speed-select').value) || 80,
-    convPollTimer: null,
-    cache:         {},
-    prefetching:   new Set(),
-    CACHE_WINDOW:  20,
-    PREFETCH_AHEAD: 12,
-    INIT_BATCH:    15,
-  };
-
-  // Hide UI controls
-  document.getElementById('frame-row').style.display    = 'none';
-  document.getElementById('prefetch-row').style.display = 'none';
-  document.getElementById('conv-status').style.display  = 'none';
-
-  const playBtn = document.getElementById('play-btn');
-  if (playBtn) playBtn.textContent = '▶ Play';
-
-  if (nglStage) nglStage.removeAllComponents();
-  nglComponent = null;
 }
 
 // ── Load static packed.pdb ─────────────────────────────────────────────────────
@@ -733,30 +688,31 @@ async function loadStaticPdb() {
   }
 }
 
-// ── Trajectory mode: wait for server extraction, then buffer + play ────────────
+// ── Trajectory mode ────────────────────────────────────────────────────────────
 async function startTrajMode() {
-  // Show extraction progress
   document.getElementById('conv-status').style.display = 'block';
   document.getElementById('conv-msg').textContent = 'Starting frame extraction...';
   document.getElementById('conv-bar').style.width = '5%';
 
-  // Check if already extracted
   try {
     const r = await fetch(`${API_BASE}/api/framecount/${jobId}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
-    if (d.status === 'ready') { await onTrajReady(d); return; }
+    if (d.status === 'ready') {
+      await onTrajReady(d);
+      return;
+    }
   } catch(e) {
     hideNglLoading();
     showNglError('Failed to start trajectory conversion: ' + e.message);
     return;
   }
 
-  // Poll until server finishes extracting frames
   let dots = 0;
   traj.convPollTimer = setInterval(async () => {
     dots = (dots + 1) % 4;
-    document.getElementById('conv-msg').textContent = 'Extracting frames' + '.'.repeat(dots + 1);
+    document.getElementById('conv-msg').textContent =
+      'Extracting frames' + '.'.repeat(dots + 1);
     const curW = parseFloat(document.getElementById('conv-bar').style.width) || 5;
     if (curW < 90) document.getElementById('conv-bar').style.width = Math.min(curW + 3, 90) + '%';
 
@@ -766,215 +722,144 @@ async function startTrajMode() {
       const d = await r.json();
       if (d.status === 'ready') {
         clearInterval(traj.convPollTimer);
-        traj.convPollTimer = null;
         await onTrajReady(d);
       }
       if (d.status === 'error') {
         clearInterval(traj.convPollTimer);
         hideNglLoading();
-        showNglError('Frame extraction failed on server.');
+        showNglError('Frame extraction failed on server. Check backend logs.');
       }
     } catch(_) {}
   }, 1500);
 }
 
-// ── Called once the server reports all frames are ready ────────────────────────
 async function onTrajReady(meta) {
   document.getElementById('conv-bar').style.width = '100%';
-  setTimeout(() => { document.getElementById('conv-status').style.display = 'none'; }, 500);
+  setTimeout(() => { document.getElementById('conv-status').style.display = 'none'; }, 600);
 
   traj.totalFrames  = meta.sampled_frames;
   traj.currentFrame = 0;
 
-  // Set up slider
   const sl = document.getElementById('frame-slider');
   sl.min   = 0;
   sl.max   = Math.max(0, traj.totalFrames - 1);
   sl.value = 0;
-  updateFrameLabel(0);
+  document.getElementById('frame-label').textContent = `Frame 0 / ${traj.totalFrames - 1}`;
+  document.getElementById('frame-row').style.display  = 'flex';
 
   document.getElementById('vs-frames').textContent = traj.totalFrames;
   document.getElementById('vs-atoms').textContent  = meta.atom_count.toLocaleString();
   document.getElementById('vs-file').textContent   = 'trajectory';
 
-  // Show prefetch buffer bar while we download the initial batch
-  document.getElementById('prefetch-row').style.display = 'flex';
-  updatePrefetchBar(0);
-
-  // Fetch the first INIT_BATCH frames in parallel before showing anything
-  await prefetchBatch(0, traj.INIT_BATCH, true);
-
-  // Render frame 0 from cache
   await nglLoadFrame(0, true);
   hideNglLoading();
   document.getElementById('ngl-empty').style.display = 'none';
-  document.getElementById('frame-row').style.display  = 'flex';
-
-  // Kick off background prefetch for the rest while user can already play
-  prefetchBatch(traj.INIT_BATCH, traj.totalFrames - traj.INIT_BATCH, false);
+  prefetchFrame(1);
 }
 
-// ── Prefetch a single frame into cache (idempotent) ───────────────────────────
-async function prefetchFrame(idx) {
-  if (idx < 0 || idx >= traj.totalFrames) return;
-  if (traj.cache[idx] !== undefined || traj.prefetching.has(idx)) return;
-  traj.prefetching.add(idx);
-  try {
-    const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const blob = await r.blob();
-    traj.cache[idx] = URL.createObjectURL(blob);
-  } catch(_) {
-    // Mark as failed with null so we don't retry infinitely
-    traj.cache[idx] = null;
-  } finally {
-    traj.prefetching.delete(idx);
-  }
-}
-
-// ── Prefetch a batch of frames concurrently ────────────────────────────────────
-// showProgress: update the buffer bar while fetching (for initial load)
-async function prefetchBatch(startIdx, count, showProgress) {
-  const promises = [];
-  for (let i = startIdx; i < startIdx + count && i < traj.totalFrames; i++) {
-    promises.push(prefetchFrame(i));
-  }
-  if (!showProgress) { await Promise.all(promises); return; }
-
-  // Show incremental progress on the bar
-  let done = 0;
-  const total = promises.length;
-  for (const p of promises) {
-    p.then(() => {
-      done++;
-      updatePrefetchBar(done / total);
-    });
-  }
-  await Promise.all(promises);
-  // Hide bar after a moment
-  setTimeout(() => { document.getElementById('prefetch-row').style.display = 'none'; }, 600);
-}
-
-function updatePrefetchBar(ratio) {
-  document.getElementById('prefetch-bar').style.width = Math.round(ratio * 100) + '%';
-  const cached = Object.keys(traj.cache).length;
-  document.getElementById('prefetch-lbl').textContent =
-    `Buffering ${cached} / ${traj.totalFrames} frames`;
-}
-
-// ── Evict frames far from current playhead to free memory ─────────────────────
-function evictCache(aroundIdx) {
-  const W = traj.CACHE_WINDOW;
-  for (const k of Object.keys(traj.cache)) {
-    const ki = parseInt(k);
-    if (Math.abs(ki - aroundIdx) > W) {
-      const url = traj.cache[k];
-      if (url) try { URL.revokeObjectURL(url); } catch(_) {}
-      delete traj.cache[k];
-    }
-  }
-}
-
-// ── Load and render a single frame from cache (never fetches inline) ──────────
+// ── Per-frame loading ──────────────────────────────────────────────────────────
 async function nglLoadFrame(idx, firstLoad = false) {
   if (idx < 0 || idx >= traj.totalFrames) return;
-
-  const url = traj.cache[idx];
-  if (!url) return; // not cached yet — caller will retry next tick
-
   traj.currentFrame = idx;
 
   const rep   = document.getElementById('rep-select').value;
   const color = document.getElementById('color-select').value;
 
+  let blobUrl;
+  if (traj.cache[idx]) {
+    blobUrl = traj.cache[idx];
+  } else {
+    try {
+      const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const blob = await r.blob();
+      blobUrl = URL.createObjectURL(blob);
+      traj.cache[idx] = blobUrl;
+    } catch(e) {
+      console.warn(`Frame ${idx} fetch failed:`, e.message);
+      return;
+    }
+  }
+
+  const KEEP_WINDOW = 10;
+  for (const k of Object.keys(traj.cache)) {
+    const ki = parseInt(k);
+    if (Math.abs(ki - idx) > KEEP_WINDOW) {
+      URL.revokeObjectURL(traj.cache[k]);
+      delete traj.cache[k];
+    }
+  }
+
   if (nglStage) nglStage.removeAllComponents();
   try {
-    nglComponent = await nglStage.loadFile(url, { ext: 'pdb', defaultRepresentation: false });
+    nglComponent = await nglStage.loadFile(blobUrl, { ext: 'pdb', defaultRepresentation: false });
     nglComponent.addRepresentation(rep, { colorScheme: color });
     if (firstLoad) nglStage.autoView();
   } catch(e) {
-    console.warn(`NGL frame ${idx} render error:`, e);
-    return;
+    console.warn("NGL frame load error:", e);
   }
 
-  // Update UI
   document.getElementById('frame-slider').value = idx;
-  updateFrameLabel(idx);
+  document.getElementById('frame-label').textContent = `Frame ${idx} / ${traj.totalFrames - 1}`;
+
   if (nglComponent && nglComponent.structure) {
     document.getElementById('vs-res').textContent =
       nglComponent.structure.residueCount.toLocaleString();
   }
 
-  // Evict old frames, prefetch ahead
-  evictCache(idx);
-  prefetchBatch(idx + 1, traj.PREFETCH_AHEAD, false);
+  prefetchFrame(idx + 1);
+  prefetchFrame(idx + 2);
 }
 
-function updateFrameLabel(idx) {
-  document.getElementById('frame-label').textContent =
-    `Frame ${idx} / ${Math.max(0, traj.totalFrames - 1)}`;
+async function prefetchFrame(idx) {
+  if (idx < 0 || idx >= traj.totalFrames) return;
+  if (traj.cache[idx]) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/frame/${jobId}/${idx}`);
+    if (!r.ok) return;
+    const blob = await r.blob();
+    traj.cache[idx] = URL.createObjectURL(blob);
+  } catch(_) {}
 }
 
-// ── Playback using requestAnimationFrame — never setTimeout ───────────────────
+// ── Playback controls ──────────────────────────────────────────────────────────
 function nglTogglePlay() { traj.playing ? nglStopPlay() : nglStartPlay(); }
 
 function nglStartPlay() {
   if (traj.totalFrames < 2) return;
-  traj.playing     = true;
-  traj.lastRenderTs = 0;
+  traj.playing = true;
   document.getElementById('play-btn').textContent = '⏸ Pause';
-
-  function loop(ts) {
+  const speedMs = parseInt(document.getElementById('speed-select').value) || 160;
+  async function step() {
     if (!traj.playing) return;
-    traj.rafHandle = requestAnimationFrame(loop);
-
-    const elapsed = ts - traj.lastRenderTs;
-    if (elapsed < traj.msPerFrame) return; // not time yet
-
-    const next = (traj.currentFrame + 1) % traj.totalFrames;
-    if (traj.cache[next]) {
-      // Frame is cached — render it (async but fire-and-forget; RAF continues)
-      nglLoadFrame(next);
-      traj.lastRenderTs = ts;
-    }
-    // If not cached yet: skip this tick, don't stall — prefetch will catch up
+    let next = traj.currentFrame + 1;
+    if (next >= traj.totalFrames) next = 0;
+    await nglLoadFrame(next);
+    traj.playTimer = setTimeout(step, speedMs);
   }
-  traj.rafHandle = requestAnimationFrame(loop);
+  step();
 }
 
 function nglStopPlay() {
   traj.playing = false;
-  if (traj.rafHandle) { cancelAnimationFrame(traj.rafHandle); traj.rafHandle = null; }
+  clearTimeout(traj.playTimer);
+  traj.playTimer = null;
   const btn = document.getElementById('play-btn');
   if (btn) btn.textContent = '▶ Play';
 }
 
-// ── Seek from slider (stops playback) ─────────────────────────────────────────
-function nglSeek(idx) {
-  nglStopPlay();
-  // Prefetch around the seek target, then render
-  prefetchBatch(idx, traj.PREFETCH_AHEAD, false).then(() => nglLoadFrame(idx));
-}
-
-// ── Speed control ──────────────────────────────────────────────────────────────
-function updateSpeed() {
-  traj.msPerFrame = parseInt(document.getElementById('speed-select').value) || 80;
-}
+function nglSetFrame(idx) { nglStopPlay(); nglLoadFrame(parseInt(idx)); }
 
 // ── Representation / Color ─────────────────────────────────────────────────────
 function changeRep(repName) {
   if (!nglComponent) return;
   nglComponent.removeAllRepresentations();
-  nglComponent.addRepresentation(repName, {
-    colorScheme: document.getElementById('color-select').value,
-  });
+  nglComponent.addRepresentation(repName, { colorScheme: document.getElementById('color-select').value });
 }
 function changeColor(scheme) {
   if (!nglComponent) return;
   nglComponent.removeAllRepresentations();
-  nglComponent.addRepresentation(document.getElementById('rep-select').value, {
-    colorScheme: scheme,
-  });
+  nglComponent.addRepresentation(document.getElementById('rep-select').value, { colorScheme: scheme });
 }
 
 // ── NGL utils ──────────────────────────────────────────────────────────────────
@@ -992,7 +877,7 @@ function nglScreenshot() {
   nglStage.makeImage({ factor: 2, antialias: true, trim: false, transparent: false })
     .then(blob => {
       const url = URL.createObjectURL(blob);
-      const a   = document.createElement('a');
+      const a = document.createElement('a');
       a.href = url; a.download = `molsim_${jobId || 'structure'}.png`;
       a.click(); URL.revokeObjectURL(url);
     });
@@ -1226,24 +1111,30 @@ function updateEnsembleParams() {
   document.getElementById('sec-press').style.display = showPress ? 'block' : 'none';
   document.getElementById('ens-badge').textContent   = ensemble;
 
+  // ── Box section: dynamically relabel for NPT ──────────────────────────────
   document.getElementById('box-title-text').textContent = isNPT
     ? 'Initial Box Size (Packmol only)'
     : 'Simulation Box';
 
   const boxTag = document.getElementById('box-title-tag');
   if (isNPT) {
-    boxTag.textContent = 'NPT — STARTING GEOMETRY ONLY';
-    boxTag.className   = 'ptag ptag-warn';
+    boxTag.textContent  = 'NPT — STARTING GEOMETRY ONLY';
+    boxTag.className    = 'ptag ptag-warn';
   } else {
-    boxTag.textContent = 'ALL ENSEMBLES';
-    boxTag.className   = 'ptag ptag-all';
+    boxTag.textContent  = 'ALL ENSEMBLES';
+    boxTag.className    = 'ptag ptag-all';
   }
 
+  // Relabel the axis inputs too
+  const axisLabel = isNPT ? 'Initial X (Å)' : 'Box X (Å)';
   document.getElementById('box-x-label').textContent = isNPT ? 'Initial X (Å)' : 'Box X (Å)';
   document.getElementById('box-y-label').textContent = isNPT ? 'Initial Y (Å)' : 'Box Y (Å)';
   document.getElementById('box-z-label').textContent = isNPT ? 'Initial Z (Å)' : 'Box Z (Å)';
+
+  // Show/hide the NPT warning note
   document.getElementById('npt-box-note').style.display = isNPT ? 'flex' : 'none';
 
+  // Stage description
   const desc = {
     NVT: 'NVT — Nosé-Hoover thermostat, fixed volume',
     NPT: 'NPT — thermostat + barostat, volume fluctuates',
@@ -1355,7 +1246,7 @@ function dl(fname) {
   window.open(`${API_BASE}/api/download/${jobId}/${fname}`, '_blank');
 }
 function addLog(msg, level='info') {
-  const b  = document.getElementById('log-body');
+  const b = document.getElementById('log-body');
   const ts = new Date().toLocaleTimeString('en',{hour12:false});
   b.innerHTML += `<div class="l-${level}">[${ts}] ${msg}</div>`;
   b.scrollTop = b.scrollHeight;
@@ -1373,7 +1264,6 @@ function setStage(id, state, label) {
 function reset() {
   selectedMols=[]; jobId=null; logIdx=0; ensemble='NVT';
   if (pollTimer) clearInterval(pollTimer);
-  trajReset();
   renderMolList(); selectEnsemble('NVT'); goStep(1);
 }
 
